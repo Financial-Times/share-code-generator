@@ -1,0 +1,19 @@
+{
+  "name": "share-code-creator",
+  "version": "1.1.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "ava"
+  },
+  "repository": {
+    "type": "git",
+    "url": "ssh://git@git.svc.ft.com:7999/labsprot/share-code-generator.git"
+  },
+  "author": "Jake Champion",
+  "license": "",
+  "devDependencies": {
+    "ava": "^0.2.0"
+  },
+  "private": true
+}
