@@ -30,15 +30,27 @@ function positionWithinDictionary(character) {
 }
 
 function addOverArrays(a, b) { // zip -> map(reduce(sum))
-	return a.map((x, index) => b[index] + x);
+	return a.map((x, index) => {
+		if (b[index] != null ) {
+			return b[index] + x;
+		} else {
+			return x;
+		}
+	});
 }
 
 function subtractOverArrays(a, b) {
-	return a.map((x, index) => x - b[index]);
+	return a.map((x, index) => {
+		if (b[index] != null ) {
+			return x - b[index];
+		} else {
+			return x;
+		}
+	});
 }
 
 function mod(n, m) {
-	return ((n % m) + m) % m;
+    return (n + (Math.abs(Math.trunc(n))*m)) % m;
 }
 
 function arrayToObject(arr) {
@@ -76,7 +88,7 @@ function isValidSalt(salt) {
 	return /[a-z0-9]{32}/.test(salt);
 }
 
-function encrypt(userId, articleId, salt) {
+function encrypt(userId, articleId, salt, time, tokens) {
 
 	var validUserId = isValidUuid(userId);
 	var validArticleId = isValidUuid(articleId);
@@ -88,12 +100,14 @@ function encrypt(userId, articleId, salt) {
 				var user = removeHyphens(userId);
 				var article = removeHyphens(articleId);
 
-				var userDictionaryIndexes = dictionaryIndexes(user);
+				var userTimeTokens = user + time + tokens;
+
+				var userTimeTokensDictionaryIndexes = dictionaryIndexes(userTimeTokens);
 				var articleDictionaryIndexes = dictionaryIndexes(article);
 				var saltDictionaryIndexes = dictionaryIndexes(salt);
 
-				var tokenIndexes = addOverArrays(addOverArrays(userDictionaryIndexes, articleDictionaryIndexes), saltDictionaryIndexes)
-				.map(a => a % 36);
+				var tokenIndexes = addOverArrays(addOverArrays(userTimeTokensDictionaryIndexes, saltDictionaryIndexes), articleDictionaryIndexes)
+				.map(a => mod(a, 36));
 
 				var code = dictionaryIndexesToString(tokenIndexes);
 
@@ -117,11 +131,20 @@ function decrypt(code, article, salt) {
 				var articleDictionaryIndexes = dictionaryIndexes(removeHyphens(article));
 				var saltDictionaryIndexes = dictionaryIndexes(salt);
 
-				var userDictionaryIndexes = subtractOverArrays(subtractOverArrays(codeDictionaryIndexes, saltDictionaryIndexes), articleDictionaryIndexes)
+				var userTimeTokensDictionaryIndexes = subtractOverArrays(subtractOverArrays(codeDictionaryIndexes, articleDictionaryIndexes), saltDictionaryIndexes)
 				.map(a => mod(a, 36));
 
-				var user = formatAsUUID(dictionaryIndexesToString(userDictionaryIndexes));
-				return user;
+				var userTimeTokens = dictionaryIndexesToString(userTimeTokensDictionaryIndexes);
+				
+				var tokens = userTimeTokens.slice(45);
+				var time = userTimeTokens.slice(32,45);
+				var user = formatAsUUID(userTimeTokens.slice(0,32));
+
+				return {
+					tokens: tokens,
+					time: time,
+					user: user
+				};
 			} else {
 				throw new Error('Not a valid salt. Needs to be a string that follows this regex pattern, `/[a-z0-9]{32}/` .');
 			}
@@ -134,7 +157,7 @@ function decrypt(code, article, salt) {
 }
 
 function isShareCodePattern(code) {
-	return /[a-z0-9]{32}/.test(code)
+	return /[a-z0-9]{46}/.test(code) || /[a-z0-9]{47}/.test(code) || /[a-z0-9]{48}/.test(code) || /[a-z0-9]{49}/.test(code);
 }
 
 module.exports = {
