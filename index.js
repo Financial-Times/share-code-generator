@@ -50,7 +50,7 @@ function subtractOverArrays(a, b) {
 }
 
 function mod(n, m) {
-	return ((n % m) + m) % m;
+    return (n + (Math.abs(Math.trunc(n))*m)) % m;
 }
 
 function arrayToObject(arr) {
@@ -107,7 +107,7 @@ function encrypt(userId, articleId, salt, time, tokens) {
 				var saltDictionaryIndexes = dictionaryIndexes(salt);
 
 				var tokenIndexes = addOverArrays(addOverArrays(userTimeTokensDictionaryIndexes, saltDictionaryIndexes), articleDictionaryIndexes)
-				.map(a => a % 36);
+				.map(a => mod(a, 36));
 
 				var code = dictionaryIndexesToString(tokenIndexes);
 
