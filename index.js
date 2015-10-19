@@ -76,16 +76,12 @@ function removeHyphens(string) {
 	return string.replace(/-/g,'');
 }
 
-function isValidCode(code) {
-	return /[a-z0-9]{32}/.test(code);
-}
-
 function isValidUuid(uuid) {
 	return /([a-z0-9]{8})-([a-z0-9]{4})-([a-z0-9]{4})-([a-z0-9]{4})-([a-z0-9]{12})/.test(uuid);
 }
 
 function isValidSalt(salt) {
-	return /[a-z0-9]{32}/.test(salt);
+	return /[a-z0-9]{49}/.test(salt);
 }
 
 function encrypt(userId, articleId, salt, time, tokens) {
@@ -113,7 +109,7 @@ function encrypt(userId, articleId, salt, time, tokens) {
 
 				return code;
 			} else {
-				throw new Error('Not a valid salt. Needs to be a string that follows this regex pattern, `/[a-z0-9]{32}/` .');
+				throw new Error('Not a valid salt. Needs to be a string that follows this regex pattern, `/[a-z0-9]{49}/` .');
 			}
 		} else {
 			throw new Error('Not a valid Article ID. Needs to be a uuid.');
@@ -124,7 +120,7 @@ function encrypt(userId, articleId, salt, time, tokens) {
 }
 
 function decrypt(code, article, salt) {
-	if (isValidCode(code)) {
+	if (isShareCodePattern(code)) {
 		if (isValidUuid(article)) {
 			if (isValidSalt(salt)) {
 				var codeDictionaryIndexes = dictionaryIndexes(code);
@@ -146,13 +142,13 @@ function decrypt(code, article, salt) {
 					user: user
 				};
 			} else {
-				throw new Error('Not a valid salt. Needs to be a string that follows this regex pattern, `/[a-z0-9]{32}/` .');
+				throw new Error('Not a valid salt. Needs to be a string that follows this regex pattern, `/[a-z0-9]{49}/` .');
 			}
 		} else {
 			throw new Error('Not a valid Article ID. Needs to be a uuid.');
 		}
 	} else {
-		throw new Error('Not a valid User ID. Needs to be a uuid.');
+		throw new Error('Not a valid code. Needs to be a string that follows this regex pattern, `/[a-z0-9]{46}/` ');
 	}
 }
 
