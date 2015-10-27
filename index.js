@@ -1,9 +1,51 @@
-var lowercase = 'abcdefghijklmnopqrstuvwxyz';
-var numbers = '0123456789';
-var uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-var specials = ":@-._~!$&'()*+,=;";
+var lowercase         = 'abcdefghijklmnopqrstuvwxyz';
+var numbers           = '0123456789';
+var uppercase         = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+var specials          = ":@-._~!$&'()*+,=;";
 var dictionaryAsArray = (lowercase + numbers + uppercase + specials).split('');
-var dictionary = arrayToObject(dictionaryAsArray);
+var dictionary        = arrayToObject(dictionaryAsArray);
+
+// example Next url with article uuid is https://next.ft.com/content/b09f4c12-7c75-11e5-98fb-5a6d4728f74e
+var uuidRegexChar            = "[a-z0-9]";
+var numPossibleChars         = 26 + 10;
+var uuidRegexFragmentLengths = [8,4,4,4,12];
+var uuidLengthWithoutHyphens = uuidRegexFragmentLengths.reduce(function(tot,n){return tot+n;});
+var uuidLengthWithHyphens    = uuidLengthWithoutHyphens + uuidRegexFragmentLengths.length - 1;
+var uuidRegexFragments       = uuidRegexFragmentLengths.map(function(n){return "(" + uuidRegexChar + "{" + n +"})";});
+var uuidRegexWithHyphens     = new RegExp('^' + uuidRegexFragments.join('-') + '$'); // e.g. ([a-z0-9]{8})-([a-z0-9]{4})-([a-z0-9]{4})-([a-z0-9]{4})-([a-z0-9]{12})
+var uuidRegexWithoutHyphens  = new RegExp('^' + uuidRegexFragments.join('')  + '$'); // e.g. ([a-z0-9]{8})([a-z0-9]{4})([a-z0-9]{4})([a-z0-9]{4})([a-z0-9]{12})
+var uuidReconstructPattern   = uuidRegexFragmentLengths.map(function(n,i){return '$' + (i+1);}).join('-'); // e.g. "$1-$2-$3-$4-$5"
+
+var unixtimeStringLength  = 10;
+var maxTokensStringLength =  4;
+var shareCodeLength       = uuidLengthWithoutHyphens + unixtimeStringLength + maxTokensStringLength;
+
+var saltRegex = new RegExp( '^' + uuidRegexChar + '{' + shareCodeLength + '}$' );
+var codeRegex = saltRegex;
+
+var unixtimeRegex  = new RegExp('^[0-9]{' + unixtimeStringLength  + '}$');
+var maxTokensRegex = new RegExp('^[0-9]{' + maxTokensStringLength + '}$');
+
+console.log("share code config dump:\n" + [
+	"           uuidRegexChar = " + uuidRegexChar,
+	"        numPossibleChars = " + numPossibleChars,
+	"uuidRegexFragmentLengths = " + uuidRegexFragmentLengths,
+	"uuidLengthWithoutHyphens = " + uuidLengthWithoutHyphens,
+	"   uuidLengthWithHyphens = " + uuidLengthWithHyphens,
+	"      uuidRegexFragments = " + uuidRegexFragments,
+	"    uuidRegexWithHyphens = " + uuidRegexWithHyphens,
+	" uuidRegexWithoutHyphens = " + uuidRegexWithoutHyphens,
+	"  uuidReconstructPattern = " + uuidReconstructPattern,
+	"    unixtimeStringLength = " + unixtimeStringLength,
+	"   maxTokensStringLength = " + maxTokensStringLength,
+	"         shareCodeLength = " + shareCodeLength,
+	"               saltRegex = " + saltRegex,
+	"               codeRegex = " + codeRegex,
+	"           unixtimeRegex = " + unixtimeRegex,
+	"          maxTokensRegex = " + maxTokensRegex
+
+	].join("\n")
+	);
 
 function dictionaryIndexesToString(dictionaryIndexes) {
 	return dictionaryIndexes.map(dictionaryIndexToChar).join('');
@@ -14,7 +56,7 @@ function dictionaryIndexToChar(index) {
 }
 
 function formatAsUUID(string) {
-	return string.replace(/([a-z0-9]{8})([a-z0-9]{4})([a-z0-9]{4})([a-z0-9]{4})([a-z0-9]{12})/, "$1-$2-$3-$4-$5");
+	return string.replace(uuidRegexWithoutHyphens, uuidReconstructPattern);
 }
 
 function toArray(string) {
@@ -76,84 +118,72 @@ function removeHyphens(string) {
 	return string.replace(/-/g,'');
 }
 
-function isValidUuid(uuid) {
-	return /([a-z0-9]{8})-([a-z0-9]{4})-([a-z0-9]{4})-([a-z0-9]{4})-([a-z0-9]{12})/.test(uuid);
+function validateStringOrThrow(name, value, regexp){
+	if (! regexp.test(value)) {
+		throw new Error('Not a valid ' + name + '. value="' + value + '" (length=' + value.length + ') does not match regexp=' + regexp.toString());
+	}
 }
 
-function isValidSalt(salt) {
-	return /[a-z0-9]{49}/.test(salt);
+function zeroPadNumToN(num, n) {
+	var nZeroes = Array(n+1).join('0')
+	return (nZeroes + num).slice(-1 * n);
 }
 
 function encrypt(userId, articleId, salt, time, tokens) {
+	var timeString   = '' + time;
+	var tokensString = zeroPadNumToN(tokens, maxTokensStringLength);
 
-	var validUserId = isValidUuid(userId);
-	var validArticleId = isValidUuid(articleId);
-	var validSalt = isValidSalt(salt);
+	validateStringOrThrow(      'userId',       userId, uuidRegexWithHyphens);
+	validateStringOrThrow(   'articleId',    articleId, uuidRegexWithHyphens);
+	validateStringOrThrow(        'salt',         salt, saltRegex           );
+	validateStringOrThrow(  'timeString',   timeString, unixtimeRegex       );
+	validateStringOrThrow('tokensString', tokensString, maxTokensRegex      );
 
-	if (validUserId) {
-		if (validArticleId) {
-			if (validSalt) {
-				var user = removeHyphens(userId);
-				var article = removeHyphens(articleId);
+	var user    = removeHyphens(userId);
+	var article = removeHyphens(articleId);
 
-				var userTimeTokens = user + time + tokens;
+	var userTimeTokens = user + timeString + tokensString;
 
-				var userTimeTokensDictionaryIndexes = dictionaryIndexes(userTimeTokens);
-				var articleDictionaryIndexes = dictionaryIndexes(article);
-				var saltDictionaryIndexes = dictionaryIndexes(salt);
+	var userTimeTokensDictionaryIndexes = dictionaryIndexes(userTimeTokens);
+	var articleDictionaryIndexes        = dictionaryIndexes(article);
+	var saltDictionaryIndexes           = dictionaryIndexes(salt);
 
-				var tokenIndexes = addOverArrays(addOverArrays(userTimeTokensDictionaryIndexes, saltDictionaryIndexes), articleDictionaryIndexes)
-				.map(a => mod(a, 36));
+	var tokenIndexes = addOverArrays(addOverArrays(userTimeTokensDictionaryIndexes, saltDictionaryIndexes), articleDictionaryIndexes)
+	.map(a => mod(a, numPossibleChars));
 
-				var code = dictionaryIndexesToString(tokenIndexes);
+	var code = dictionaryIndexesToString(tokenIndexes);
 
-				return code;
-			} else {
-				throw new Error('Not a valid salt. Needs to be a string that follows this regex pattern, `/[a-z0-9]{49}/` .');
-			}
-		} else {
-			throw new Error('Not a valid Article ID. Needs to be a uuid.');
-		}
-	} else {
-		throw new Error('Not a valid User ID. Needs to be a uuid.');
-	}
+	return code;
 }
 
 function decrypt(code, article, salt) {
-	if (isShareCodePattern(code)) {
-		if (isValidUuid(article)) {
-			if (isValidSalt(salt)) {
-				var codeDictionaryIndexes = dictionaryIndexes(code);
-				var articleDictionaryIndexes = dictionaryIndexes(removeHyphens(article));
-				var saltDictionaryIndexes = dictionaryIndexes(salt);
 
-				var userTimeTokensDictionaryIndexes = subtractOverArrays(subtractOverArrays(codeDictionaryIndexes, articleDictionaryIndexes), saltDictionaryIndexes)
-				.map(a => mod(a, 36));
+	validateStringOrThrow(     'code',    code, codeRegex           );
+	validateStringOrThrow('articleId', article, uuidRegexWithHyphens);
+	validateStringOrThrow(     'salt',    salt, saltRegex           );
 
-				var userTimeTokens = dictionaryIndexesToString(userTimeTokensDictionaryIndexes);
-				
-				var tokens = userTimeTokens.slice(45);
-				var time = userTimeTokens.slice(32,45);
-				var user = formatAsUUID(userTimeTokens.slice(0,32));
+	var codeDictionaryIndexes    = dictionaryIndexes(code);
+	var articleDictionaryIndexes = dictionaryIndexes(removeHyphens(article));
+	var saltDictionaryIndexes    = dictionaryIndexes(salt);
 
-				return {
-					tokens: tokens,
-					time: time,
-					user: user
-				};
-			} else {
-				throw new Error('Not a valid salt. Needs to be a string that follows this regex pattern, `/[a-z0-9]{49}/` .');
-			}
-		} else {
-			throw new Error('Not a valid Article ID. Needs to be a uuid.');
-		}
-	} else {
-		throw new Error('Not a valid code. Needs to be a string that follows this regex pattern, `/[a-z0-9]{46}/` ');
-	}
+	var userTimeTokensDictionaryIndexes = subtractOverArrays(subtractOverArrays(codeDictionaryIndexes, articleDictionaryIndexes), saltDictionaryIndexes)
+	.map(a => mod(a, numPossibleChars));
+
+	var userTimeTokens = dictionaryIndexesToString(userTimeTokensDictionaryIndexes);
+	
+	var tokens = userTimeTokens.slice(uuidLengthWithoutHyphens + unixtimeStringLength);
+	var time   = userTimeTokens.slice(uuidLengthWithoutHyphens, uuidLengthWithoutHyphens + unixtimeStringLength);
+	var user   = formatAsUUID(userTimeTokens.slice(0,uuidLengthWithoutHyphens));
+
+	return {
+		tokens: tokens,
+		time:   time,
+		user:   user
+	};
 }
 
 function isShareCodePattern(code) {
-	return /[a-z0-9]{46}/.test(code) || /[a-z0-9]{47}/.test(code) || /[a-z0-9]{48}/.test(code) || /[a-z0-9]{49}/.test(code);
+	return codeRegex.test(code);
 }
 
 module.exports = {
