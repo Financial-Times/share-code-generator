@@ -43,6 +43,18 @@ test('decrypting should return the User ID when given an encrypted string', t =>
 	t.end()
 });
 
+test('decrypting should return the tokens when given an encrypted string', t => {
+	var code = fn.encrypt(validUserId, validArticleId, validSalt, validTime, validMaxTokens);
+	t.is(parseInt(fn.decrypt(code, validArticleId, validSalt)['tokens']), validMaxTokens);
+	t.end()
+});
+
+test('decrypting should return the time when given an encrypted string', t => {
+	var code = fn.encrypt(validUserId, validArticleId, validSalt, validTime, validMaxTokens);
+	t.is(parseInt(fn.decrypt(code, validArticleId, validSalt)['time']), validTime);
+	t.end()
+});
+
 test('should return true if code conforms to share code pattern', t => {
 	var code = fn.encrypt(validUserId, validArticleId, validSalt, validTime, validMaxTokens);
 	t.is(fn.isShareCodePattern(code), true);

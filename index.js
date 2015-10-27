@@ -1,9 +1,9 @@
-var lowercase = 'abcdefghijklmnopqrstuvwxyz';
-var numbers = '0123456789';
-var uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-var specials = ":@-._~!$&'()*+,=;";
+var lowercase         = 'abcdefghijklmnopqrstuvwxyz';
+var numbers           = '0123456789';
+var uppercase         = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+var specials          = ":@-._~!$&'()*+,=;";
 var dictionaryAsArray = (lowercase + numbers + uppercase + specials).split('');
-var dictionary = arrayToObject(dictionaryAsArray);
+var dictionary        = arrayToObject(dictionaryAsArray);
 
 // example Next url with article uuid is https://next.ft.com/content/b09f4c12-7c75-11e5-98fb-5a6d4728f74e
 var uuidRegexChar            = "[a-z0-9]";
