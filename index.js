@@ -1,13 +1,13 @@
 var lowercase         = 'abcdefghijklmnopqrstuvwxyz';
 var numbers           = '0123456789';
 var uppercase         = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-var specials          = ":@-._~!$&'()*+,=;";
-var dictionaryAsArray = (lowercase + numbers + uppercase + specials).split('');
+var otherUnreserved   = "-";
+var dictionaryAsArray = (lowercase + numbers + uppercase + otherUnreserved).split('');
 var dictionary        = arrayToObject(dictionaryAsArray);
+var numPossibleChars  = dictionaryAsArray.length;
 
 // example Next url with article uuid is https://next.ft.com/content/b09f4c12-7c75-11e5-98fb-5a6d4728f74e
 var uuidRegexChar            = "[a-z0-9]";
-var numPossibleChars         = 26 + 10;
 var uuidRegexFragmentLengths = [8,4,4,4,12];
 var uuidLengthWithoutHyphens = uuidRegexFragmentLengths.reduce(function(tot,n){return tot+n;});
 var uuidLengthWithHyphens    = uuidLengthWithoutHyphens + uuidRegexFragmentLengths.length - 1;
@@ -20,11 +20,13 @@ var unixtimeStringLength  = 10;
 var maxTokensStringLength =  4;
 var shareCodeLength       = uuidLengthWithoutHyphens + unixtimeStringLength + maxTokensStringLength;
 
-var saltRegex = new RegExp( '^' + uuidRegexChar + '{' + shareCodeLength + '}$' );
-var codeRegex = saltRegex;
+var codeRegexChar   = '[' + dictionaryAsArray.join('') + ']';
+var saltRegexString = '^' + codeRegexChar + '{' + shareCodeLength + '}';
+var codeRegex       = new RegExp( saltRegexString + '$' );
+var saltRegex       = new RegExp( saltRegexString       ); // salt could be longer - we don't care
 
 var unixtimeRegex  = new RegExp('^[0-9]{' + unixtimeStringLength  + '}$');
-var maxTokensRegex = new RegExp('^[0-9]{' + maxTokensStringLength + '}$');
+var maxTokensRegex = new RegExp('^(-[0-9]{' + (maxTokensStringLength -1) + '}|[0-9]{' + maxTokensStringLength + '})$');
 
 console.log("share code config dump:\n" + [
 	"           uuidRegexChar = " + uuidRegexChar,
@@ -125,8 +127,16 @@ function validateStringOrThrow(name, value, regexp){
 }
 
 function zeroPadNumToN(num, n) {
-	var nZeroes = Array(n+1).join('0')
-	return (nZeroes + num).slice(-1 * n);
+	var zeroPadded;
+	if (num<0) { // any -ve n is turned into "-001"
+		var nMinusTwoZeroes = Array(n-1).join('0');
+		zeroPadded = '-' + nMinusTwoZeroes + '1';
+	} else {
+		var nZeroes = Array(n+1).join('0')
+		zeroPadded = (nZeroes + num).slice(-1 * n);
+	}
+
+	return zeroPadded;
 }
 
 function encrypt(userId, articleId, salt, time, tokens) {
@@ -148,7 +158,8 @@ function encrypt(userId, articleId, salt, time, tokens) {
 	var articleDictionaryIndexes        = dictionaryIndexes(article);
 	var saltDictionaryIndexes           = dictionaryIndexes(salt);
 
-	var tokenIndexes = addOverArrays(addOverArrays(userTimeTokensDictionaryIndexes, saltDictionaryIndexes), articleDictionaryIndexes)
+	// ensure salt is always 2nd arg to addOverArrays
+	var tokenIndexes = addOverArrays(addOverArrays(userTimeTokensDictionaryIndexes, articleDictionaryIndexes), saltDictionaryIndexes) 
 	.map(a => mod(a, numPossibleChars));
 
 	var code = dictionaryIndexesToString(tokenIndexes);
@@ -166,6 +177,7 @@ function decrypt(code, article, salt) {
 	var articleDictionaryIndexes = dictionaryIndexes(removeHyphens(article));
 	var saltDictionaryIndexes    = dictionaryIndexes(salt);
 
+	// ensure salt is always 2nd arg to addOverArrays
 	var userTimeTokensDictionaryIndexes = subtractOverArrays(subtractOverArrays(codeDictionaryIndexes, articleDictionaryIndexes), saltDictionaryIndexes)
 	.map(a => mod(a, numPossibleChars));
 

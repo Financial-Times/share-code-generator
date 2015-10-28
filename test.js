@@ -30,6 +30,11 @@ test('encrypting should return a string', t => {
 	t.end();
 });
 
+test('encrypting should accept a negative maxTokens', t => {
+	t.is(typeof fn.encrypt(validUserId, validArticleId, validSalt, validTime, -1), 'string');
+	t.end();
+});
+
 test('decrypting should throw for invalid values', t => {
 	t.throws(fn.decrypt.bind(fn,invalidUserId, validArticleId, validSalt), Error);
 	t.throws(fn.decrypt.bind(fn,validUserId, invalidArticleId, validSalt), Error);
@@ -46,6 +51,12 @@ test('decrypting should return the User ID when given an encrypted string', t =>
 test('decrypting should return the tokens when given an encrypted string', t => {
 	var code = fn.encrypt(validUserId, validArticleId, validSalt, validTime, validMaxTokens);
 	t.is(parseInt(fn.decrypt(code, validArticleId, validSalt)['tokens']), validMaxTokens);
+	t.end()
+});
+
+test('decrypting should return the tokens==-1 when given an encrypted string with tokens==-10', t => {
+	var code = fn.encrypt(validUserId, validArticleId, validSalt, validTime, -10);
+	t.is(parseInt(fn.decrypt(code, validArticleId, validSalt)['tokens']), -1);
 	t.end()
 });
 
