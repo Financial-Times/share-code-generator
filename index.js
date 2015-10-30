@@ -145,7 +145,7 @@ function zeroPadNumToN(num, n) {
 	return zeroPadded;
 }
 
-// ToDo for article UUID shuffle
+// For shuffling aarrays:
 // - construct a seed from the salt (just use the salt string)
 // - created a seeded prng (via knuth-shuffle-seeded, added to package.json, 
 // -- https://www.npmjs.com/package/knuth-shuffle-seeded)
