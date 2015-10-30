@@ -16,8 +16,6 @@ const validSalt       = '1234567890123456789012345678901234567890123456';
 const validTime       = 1234567890;
 const validMaxTokens  = 100;
 
-console.log( "test: process.env.NODE_ENV=", process.env.NODE_ENV);
-
 test('encrypting should throw for invalid values', t => {
 	t.throws(fn.encrypt.bind(fn,invalidUserId,   validArticleId,   validSalt,   validTime,   validMaxTokens), Error);
 	t.throws(fn.encrypt.bind(fn,  validUserId, invalidArticleId,   validSalt,   validTime,   validMaxTokens), Error);
@@ -86,5 +84,15 @@ test('should return false if code does not conform to share code pattern', t => 
 test('decrypting with a different articleId should not return the original User ID', t => {
 	var code = fn.encrypt(validUserId, validArticleId, validSalt, validTime, validMaxTokens);
 	t.not(fn.decrypt(code, validArticleId2, validSalt)['user'], validUserId);
+	t.end();
+});
+
+test('subtracting the articleId from the sharecode and adding a different articleId should not result in a valid code', t => {
+	var code = fn.encrypt(validUserId, validArticleId, validSalt, validTime, validMaxTokens);
+	var indexesMinusArticleId = fn._subtractOverArrays( fn._dictionaryIndexes(code) , fn._dictionaryIndexes( fn._removeHyphens(validArticleId)));
+	var indexesPlusArticleId2 = fn._addOverArrays( indexesMinusArticleId, fn._dictionaryIndexes(fn._removeHyphens(validArticleId2)) );
+	var codeWithArticleId2    = fn._dictionaryIndexesToString( indexesPlusArticleId2 );
+
+	t.not(fn.decrypt(codeWithArticleId2, validArticleId2, validSalt)['user'], validUserId);
 	t.end();
 });

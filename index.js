@@ -225,5 +225,10 @@ function isShareCodePattern(code) {
 module.exports = {
 	encrypt: encrypt,
 	decrypt: decrypt,
-	isShareCodePattern: isShareCodePattern
+	isShareCodePattern: isShareCodePattern,
+	_removeHyphens: removeHyphens,
+	_dictionaryIndexes: dictionaryIndexes,
+	_addOverArrays: addOverArrays,
+	_subtractOverArrays: subtractOverArrays,
+	_dictionaryIndexesToString: dictionaryIndexesToString
 };
