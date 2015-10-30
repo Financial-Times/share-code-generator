@@ -58,8 +58,8 @@ test('decrypting should return the tokens when given an encrypted string', t => 
 	t.end()
 });
 
-test('decrypting should return the tokens==-1 when given an encrypted string with tokens==-10', t => {
-	var code = fn.encrypt(validUserId, validArticleId, validSalt, validTime, -10);
+test('decrypting should return the tokens==-1 when given an encrypted string with tokens==-123', t => {
+	var code = fn.encrypt(validUserId, validArticleId, validSalt, validTime, -123);
 	t.is(parseInt(fn.decrypt(code, validArticleId, validSalt)['tokens']), -1);
 	t.end()
 });

@@ -132,11 +132,30 @@ function validateStringOrThrow(name, value, regexp){
 	}
 }
 
+// any -ve num is coerced to -1
+
+function constructMaxTokensString( num, maxLength ) {
+	if (maxLength < 2) {
+		throw new Error( "constructMaxTokensString: maxLength(", maxLength, ") is too short to accommodate a possible value of num=-1" );
+	}
+
+	// coerce any -ve num to be -1
+	if (num < 0) { 
+		num = -1; 
+	} else if( num < (1+Math.floor(Math.log10(num))) ) {
+		throw new Error("constructMaxTokensString: maxLength(", maxLength, ") is too short to accommodate num=", num);
+	}
+
+	return zeroPadNumToN( num, maxLength );
+}
+
+// given an integer (num), ensure it is zero-padded to n places,
+// e.g. (12,3) -> "012", (12,5) -> "00012", (-1,4) -> "-001" [NB: result is a string of n chars]
+
 function zeroPadNumToN(num, n) {
 	var zeroPadded;
-	if (num<0) { // any -ve n is turned into "-001"
-		var nMinusTwoZeroes = Array(n-1).join('0');
-		zeroPadded = '-' + nMinusTwoZeroes + '1';
+	if (num<0) { 
+		zeroPadded = '-' + zeroPadNumToN(-1 * num, n-1);
 	} else {
 		var nZeroes = Array(n+1).join('0')
 		zeroPadded = (nZeroes + num).slice(-1 * n);
@@ -145,7 +164,7 @@ function zeroPadNumToN(num, n) {
 	return zeroPadded;
 }
 
-// For shuffling aarrays:
+// For shuffling arrays:
 // - construct a seed from the salt (just use the salt string)
 // - created a seeded prng (via knuth-shuffle-seeded, added to package.json, 
 // -- https://www.npmjs.com/package/knuth-shuffle-seeded)
@@ -163,7 +182,7 @@ function seededShuffle( array, salt ) {
 
 function encrypt(userId, articleId, salt, time, tokens) {
 	var timeString   = '' + time;
-	var tokensString = zeroPadNumToN(tokens, maxTokensStringLength);
+	var tokensString = constructMaxTokensString(tokens, maxTokensStringLength);
 
 	validateStringOrThrow(      'userId',       userId, uuidRegexWithHyphens);
 	validateStringOrThrow(   'articleId',    articleId, uuidRegexWithHyphens);
