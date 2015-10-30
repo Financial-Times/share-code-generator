@@ -1,3 +1,9 @@
+'use strict'
+
+var shuffle = require('knuth-shuffle-seeded');
+
+
+
 var lowercase         = 'abcdefghijklmnopqrstuvwxyz';
 var numbers           = '0123456789';
 var uppercase         = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -139,6 +145,22 @@ function zeroPadNumToN(num, n) {
 	return zeroPadded;
 }
 
+// ToDo for article UUID shuffle
+// - construct a seed from the salt (just use the salt string)
+// - created a seeded prng (via knuth-shuffle-seeded, added to package.json, 
+// -- https://www.npmjs.com/package/knuth-shuffle-seeded)
+// -- https://github.com/TimothyGu/knuth-shuffle-seeded
+// - construct reversible shuffle of article id
+
+function seededShuffle( array, salt ) {
+	var clonedArray   = array.slice(0);
+	var shuffledArray = shuffle(clonedArray, salt);
+	return shuffledArray;
+}
+
+//------------------------------------------
+// exported functions
+
 function encrypt(userId, articleId, salt, time, tokens) {
 	var timeString   = '' + time;
 	var tokensString = zeroPadNumToN(tokens, maxTokensStringLength);
@@ -154,12 +176,13 @@ function encrypt(userId, articleId, salt, time, tokens) {
 
 	var userTimeTokens = user + timeString + tokensString;
 
-	var userTimeTokensDictionaryIndexes = dictionaryIndexes(userTimeTokens);
-	var articleDictionaryIndexes        = dictionaryIndexes(article);
-	var saltDictionaryIndexes           = dictionaryIndexes(salt);
+	var userTimeTokensDictionaryIndexes  = dictionaryIndexes(userTimeTokens);
+	var articleDictionaryIndexes         = dictionaryIndexes(article);
+	var shuffledArticleDictionaryIndexes = seededShuffle(articleDictionaryIndexes, salt);
+	var saltDictionaryIndexes            = dictionaryIndexes(salt);
 
 	// ensure salt is always 2nd arg to addOverArrays
-	var tokenIndexes = addOverArrays(addOverArrays(userTimeTokensDictionaryIndexes, articleDictionaryIndexes), saltDictionaryIndexes) 
+	var tokenIndexes = addOverArrays(addOverArrays(userTimeTokensDictionaryIndexes, shuffledArticleDictionaryIndexes), saltDictionaryIndexes) 
 	.map(a => mod(a, numPossibleChars));
 
 	var code = dictionaryIndexesToString(tokenIndexes);
@@ -173,12 +196,13 @@ function decrypt(code, article, salt) {
 	validateStringOrThrow('articleId', article, uuidRegexWithHyphens);
 	validateStringOrThrow(     'salt',    salt, saltRegex           );
 
-	var codeDictionaryIndexes    = dictionaryIndexes(code);
-	var articleDictionaryIndexes = dictionaryIndexes(removeHyphens(article));
-	var saltDictionaryIndexes    = dictionaryIndexes(salt);
+	var codeDictionaryIndexes            = dictionaryIndexes(code);
+	var articleDictionaryIndexes         = dictionaryIndexes(removeHyphens(article));
+	var shuffledArticleDictionaryIndexes = seededShuffle(articleDictionaryIndexes, salt);
+	var saltDictionaryIndexes            = dictionaryIndexes(salt);
 
 	// ensure salt is always 2nd arg to addOverArrays
-	var userTimeTokensDictionaryIndexes = subtractOverArrays(subtractOverArrays(codeDictionaryIndexes, articleDictionaryIndexes), saltDictionaryIndexes)
+	var userTimeTokensDictionaryIndexes = subtractOverArrays(subtractOverArrays(codeDictionaryIndexes, shuffledArticleDictionaryIndexes), saltDictionaryIndexes)
 	.map(a => mod(a, numPossibleChars));
 
 	var userTimeTokens = dictionaryIndexesToString(userTimeTokensDictionaryIndexes);

@@ -16,6 +16,8 @@ const validSalt       = '1234567890123456789012345678901234567890123456';
 const validTime       = 1234567890;
 const validMaxTokens  = 100;
 
+console.log( "test: process.env.NODE_ENV=", process.env.NODE_ENV);
+
 test('encrypting should throw for invalid values', t => {
 	t.throws(fn.encrypt.bind(fn,invalidUserId,   validArticleId,   validSalt,   validTime,   validMaxTokens), Error);
 	t.throws(fn.encrypt.bind(fn,  validUserId, invalidArticleId,   validSalt,   validTime,   validMaxTokens), Error);
@@ -42,9 +44,13 @@ test('decrypting should throw for invalid values', t => {
 	t.end();
 });
 
-test('decrypting should return the User ID when given an encrypted string', t => {
+test('decrypting should return the original User ID (and time and tokens) when given an encrypted string and the original article ID', t => {
 	var code = fn.encrypt(validUserId, validArticleId, validSalt, validTime, validMaxTokens);
-	t.is(fn.decrypt(code, validArticleId, validSalt)['user'], validUserId);
+	var decryptedOutput = fn.decrypt(code, validArticleId, validSalt);
+
+	t.is(         decryptedOutput['user'  ] , validUserId   );
+	t.is(parseInt(decryptedOutput['time'  ]), validTime     );
+	t.is(parseInt(decryptedOutput['tokens']), validMaxTokens);
 	t.end()
 });
 
