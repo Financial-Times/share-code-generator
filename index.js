@@ -2,8 +2,6 @@
 
 var shuffle = require('knuth-shuffle-seeded');
 
-
-
 var lowercase         = 'abcdefghijklmnopqrstuvwxyz';
 var numbers           = '0123456789';
 var uppercase         = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -113,7 +111,7 @@ function arrayToObject(arr) {
 function addInPairs(arr) {
 	return arr.map(function(item, index) {
 		if (index % 2 === 0) {
-			if (arr[index + 1] != null) {
+			if (arr[index + 1] !== null) {
 				return item + arr[index + 1];
 			} else {
 				return item;
@@ -136,14 +134,14 @@ function validateStringOrThrow(name, value, regexp){
 
 function constructMaxTokensString( num, maxLength ) {
 	if (maxLength < 2) {
-		throw new Error( "constructMaxTokensString: maxLength(", maxLength, ") is too short to accommodate a possible value of num=-1" );
+		throw new Error( "constructMaxTokensString: maxLength(" + maxLength + ") is too short to accommodate a possible value of num=-1" );
 	}
 
 	// coerce any -ve num to be -1
-	if (num < 0) { 
-		num = -1; 
+	if (num < 0) {
+		num = -1;
 	} else if( num < (1+Math.floor(Math.log10(num))) ) {
-		throw new Error("constructMaxTokensString: maxLength(", maxLength, ") is too short to accommodate num=", num);
+		throw new Error("constructMaxTokensString: maxLength(" +  maxLength + ") is too short to accommodate num=" + num);
 	}
 
 	return zeroPadNumToN( num, maxLength );
@@ -154,7 +152,7 @@ function constructMaxTokensString( num, maxLength ) {
 
 function zeroPadNumToN(num, n) {
 	var zeroPadded;
-	if (num<0) { 
+	if (num<0) {
 		zeroPadded = '-' + zeroPadNumToN(-1 * num, n-1);
 	} else {
 		var nZeroes = Array(n+1).join('0')
@@ -201,7 +199,7 @@ function encrypt(userId, articleId, salt, time, tokens) {
 	var saltDictionaryIndexes            = dictionaryIndexes(salt);
 
 	// ensure salt is always 2nd arg to addOverArrays
-	var tokenIndexes = addOverArrays(addOverArrays(userTimeTokensDictionaryIndexes, shuffledArticleDictionaryIndexes), saltDictionaryIndexes) 
+	var tokenIndexes = addOverArrays(addOverArrays(userTimeTokensDictionaryIndexes, shuffledArticleDictionaryIndexes), saltDictionaryIndexes)
 	.map(a => mod(a, numPossibleChars));
 
 	var code = dictionaryIndexesToString(tokenIndexes);
