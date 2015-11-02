@@ -42,9 +42,13 @@ test('decrypting should throw for invalid values', t => {
 	t.end();
 });
 
-test('decrypting should return the User ID when given an encrypted string', t => {
+test('decrypting should return the original User ID (and time and tokens) when given an encrypted string and the original article ID', t => {
 	var code = fn.encrypt(validUserId, validArticleId, validSalt, validTime, validMaxTokens);
-	t.is(fn.decrypt(code, validArticleId, validSalt)['user'], validUserId);
+	var decryptedOutput = fn.decrypt(code, validArticleId, validSalt);
+
+	t.is(         decryptedOutput['user'  ] , validUserId   );
+	t.is(parseInt(decryptedOutput['time'  ]), validTime     );
+	t.is(parseInt(decryptedOutput['tokens']), validMaxTokens);
 	t.end()
 });
 
@@ -54,8 +58,8 @@ test('decrypting should return the tokens when given an encrypted string', t => 
 	t.end()
 });
 
-test('decrypting should return the tokens==-1 when given an encrypted string with tokens==-10', t => {
-	var code = fn.encrypt(validUserId, validArticleId, validSalt, validTime, -10);
+test('decrypting should return the tokens==-1 when given an encrypted string with tokens==-123', t => {
+	var code = fn.encrypt(validUserId, validArticleId, validSalt, validTime, -123);
 	t.is(parseInt(fn.decrypt(code, validArticleId, validSalt)['tokens']), -1);
 	t.end()
 });
@@ -80,5 +84,15 @@ test('should return false if code does not conform to share code pattern', t => 
 test('decrypting with a different articleId should not return the original User ID', t => {
 	var code = fn.encrypt(validUserId, validArticleId, validSalt, validTime, validMaxTokens);
 	t.not(fn.decrypt(code, validArticleId2, validSalt)['user'], validUserId);
+	t.end();
+});
+
+test('subtracting the articleId from the sharecode and adding a different articleId should not result in a valid code', t => {
+	var code = fn.encrypt(validUserId, validArticleId, validSalt, validTime, validMaxTokens);
+	var indexesMinusArticleId = fn._subtractOverArrays( fn._dictionaryIndexes(code) , fn._dictionaryIndexes( fn._removeHyphens(validArticleId)));
+	var indexesPlusArticleId2 = fn._addOverArrays( indexesMinusArticleId, fn._dictionaryIndexes(fn._removeHyphens(validArticleId2)) );
+	var codeWithArticleId2    = fn._dictionaryIndexesToString( indexesPlusArticleId2 );
+
+	t.not(fn.decrypt(codeWithArticleId2, validArticleId2, validSalt)['user'], validUserId);
 	t.end();
 });

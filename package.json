@@ -1,7 +1,7 @@
 {
   "name": "share-code-creator",
   "version": "2.1.2",
-  "description": "",
+  "description": "allows encrypt and decrypt of sharecodes",
   "main": "index.js",
   "scripts": {
     "test": "ava"
@@ -14,6 +14,9 @@
   "license": "",
   "devDependencies": {
     "ava": "^0.2.0"
+  },
+  "dependencies": {
+      "knuth-shuffle-seeded": "^1.0.6"
   },
   "private": true
 }

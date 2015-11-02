@@ -1,3 +1,7 @@
+'use strict'
+
+var shuffle = require('knuth-shuffle-seeded');
+
 var lowercase         = 'abcdefghijklmnopqrstuvwxyz';
 var numbers           = '0123456789';
 var uppercase         = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -107,7 +111,7 @@ function arrayToObject(arr) {
 function addInPairs(arr) {
 	return arr.map(function(item, index) {
 		if (index % 2 === 0) {
-			if (arr[index + 1] != null) {
+			if (arr[index + 1] !== null) {
 				return item + arr[index + 1];
 			} else {
 				return item;
@@ -126,11 +130,30 @@ function validateStringOrThrow(name, value, regexp){
 	}
 }
 
+// any -ve num is coerced to -1
+
+function constructMaxTokensString( num, maxLength ) {
+	if (maxLength < 2) {
+		throw new Error( "constructMaxTokensString: maxLength(" + maxLength + ") is too short to accommodate a possible value of num=-1" );
+	}
+
+	// coerce any -ve num to be -1
+	if (num < 0) {
+		num = -1;
+	} else if( num < (1+Math.floor(Math.log10(num))) ) {
+		throw new Error("constructMaxTokensString: maxLength(" +  maxLength + ") is too short to accommodate num=" + num);
+	}
+
+	return zeroPadNumToN( num, maxLength );
+}
+
+// given an integer (num), ensure it is zero-padded to n places,
+// e.g. (12,3) -> "012", (12,5) -> "00012", (-1,4) -> "-001" [NB: result is a string of n chars]
+
 function zeroPadNumToN(num, n) {
 	var zeroPadded;
-	if (num<0) { // any -ve n is turned into "-001"
-		var nMinusTwoZeroes = Array(n-1).join('0');
-		zeroPadded = '-' + nMinusTwoZeroes + '1';
+	if (num<0) {
+		zeroPadded = '-' + zeroPadNumToN(-1 * num, n-1);
 	} else {
 		var nZeroes = Array(n+1).join('0')
 		zeroPadded = (nZeroes + num).slice(-1 * n);
@@ -139,9 +162,25 @@ function zeroPadNumToN(num, n) {
 	return zeroPadded;
 }
 
+// For shuffling arrays:
+// - construct a seed from the salt (just use the salt string)
+// - created a seeded prng (via knuth-shuffle-seeded, added to package.json, 
+// -- https://www.npmjs.com/package/knuth-shuffle-seeded)
+// -- https://github.com/TimothyGu/knuth-shuffle-seeded
+// - construct reversible shuffle of article id
+
+function seededShuffle( array, salt ) {
+	var clonedArray   = array.slice(0);
+	var shuffledArray = shuffle(clonedArray, salt);
+	return shuffledArray;
+}
+
+//------------------------------------------
+// exported functions
+
 function encrypt(userId, articleId, salt, time, tokens) {
 	var timeString   = '' + time;
-	var tokensString = zeroPadNumToN(tokens, maxTokensStringLength);
+	var tokensString = constructMaxTokensString(tokens, maxTokensStringLength);
 
 	validateStringOrThrow(      'userId',       userId, uuidRegexWithHyphens);
 	validateStringOrThrow(   'articleId',    articleId, uuidRegexWithHyphens);
@@ -154,12 +193,13 @@ function encrypt(userId, articleId, salt, time, tokens) {
 
 	var userTimeTokens = user + timeString + tokensString;
 
-	var userTimeTokensDictionaryIndexes = dictionaryIndexes(userTimeTokens);
-	var articleDictionaryIndexes        = dictionaryIndexes(article);
-	var saltDictionaryIndexes           = dictionaryIndexes(salt);
+	var userTimeTokensDictionaryIndexes  = dictionaryIndexes(userTimeTokens);
+	var articleDictionaryIndexes         = dictionaryIndexes(article);
+	var shuffledArticleDictionaryIndexes = seededShuffle(articleDictionaryIndexes, salt);
+	var saltDictionaryIndexes            = dictionaryIndexes(salt);
 
 	// ensure salt is always 2nd arg to addOverArrays
-	var tokenIndexes = addOverArrays(addOverArrays(userTimeTokensDictionaryIndexes, articleDictionaryIndexes), saltDictionaryIndexes) 
+	var tokenIndexes = addOverArrays(addOverArrays(userTimeTokensDictionaryIndexes, shuffledArticleDictionaryIndexes), saltDictionaryIndexes)
 	.map(a => mod(a, numPossibleChars));
 
 	var code = dictionaryIndexesToString(tokenIndexes);
@@ -173,12 +213,13 @@ function decrypt(code, article, salt) {
 	validateStringOrThrow('articleId', article, uuidRegexWithHyphens);
 	validateStringOrThrow(     'salt',    salt, saltRegex           );
 
-	var codeDictionaryIndexes    = dictionaryIndexes(code);
-	var articleDictionaryIndexes = dictionaryIndexes(removeHyphens(article));
-	var saltDictionaryIndexes    = dictionaryIndexes(salt);
+	var codeDictionaryIndexes            = dictionaryIndexes(code);
+	var articleDictionaryIndexes         = dictionaryIndexes(removeHyphens(article));
+	var shuffledArticleDictionaryIndexes = seededShuffle(articleDictionaryIndexes, salt);
+	var saltDictionaryIndexes            = dictionaryIndexes(salt);
 
 	// ensure salt is always 2nd arg to addOverArrays
-	var userTimeTokensDictionaryIndexes = subtractOverArrays(subtractOverArrays(codeDictionaryIndexes, articleDictionaryIndexes), saltDictionaryIndexes)
+	var userTimeTokensDictionaryIndexes = subtractOverArrays(subtractOverArrays(codeDictionaryIndexes, shuffledArticleDictionaryIndexes), saltDictionaryIndexes)
 	.map(a => mod(a, numPossibleChars));
 
 	var userTimeTokens = dictionaryIndexesToString(userTimeTokensDictionaryIndexes);
@@ -201,5 +242,10 @@ function isShareCodePattern(code) {
 module.exports = {
 	encrypt: encrypt,
 	decrypt: decrypt,
-	isShareCodePattern: isShareCodePattern
+	isShareCodePattern: isShareCodePattern,
+	_removeHyphens: removeHyphens,
+	_dictionaryIndexes: dictionaryIndexes,
+	_addOverArrays: addOverArrays,
+	_subtractOverArrays: subtractOverArrays,
+	_dictionaryIndexesToString: dictionaryIndexesToString
 };
