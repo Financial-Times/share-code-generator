@@ -32,26 +32,28 @@ var saltRegex       = new RegExp( saltRegexString       ); // salt could be long
 var unixtimeRegex  = new RegExp('^[0-9]{' + unixtimeStringLength  + '}$');
 var maxTokensRegex = new RegExp('^(-[0-9]{' + (maxTokensStringLength -1) + '}|[0-9]{' + maxTokensStringLength + '})$');
 
-console.log("share code config dump:\n" + [
-	"           uuidRegexChar = " + uuidRegexChar,
-	"        numPossibleChars = " + numPossibleChars,
-	"uuidRegexFragmentLengths = " + uuidRegexFragmentLengths,
-	"uuidLengthWithoutHyphens = " + uuidLengthWithoutHyphens,
-	"   uuidLengthWithHyphens = " + uuidLengthWithHyphens,
-	"      uuidRegexFragments = " + uuidRegexFragments,
-	"    uuidRegexWithHyphens = " + uuidRegexWithHyphens,
-	" uuidRegexWithoutHyphens = " + uuidRegexWithoutHyphens,
-	"  uuidReconstructPattern = " + uuidReconstructPattern,
-	"    unixtimeStringLength = " + unixtimeStringLength,
-	"   maxTokensStringLength = " + maxTokensStringLength,
-	"         shareCodeLength = " + shareCodeLength,
-	"               saltRegex = " + saltRegex,
-	"               codeRegex = " + codeRegex,
-	"           unixtimeRegex = " + unixtimeRegex,
-	"          maxTokensRegex = " + maxTokensRegex
+if (process.env.NODE_ENV !== 'production') {
+	console.log("share code config dump:\n" + [
+		"           uuidRegexChar = " + uuidRegexChar,
+		"        numPossibleChars = " + numPossibleChars,
+		"uuidRegexFragmentLengths = " + uuidRegexFragmentLengths,
+		"uuidLengthWithoutHyphens = " + uuidLengthWithoutHyphens,
+		"   uuidLengthWithHyphens = " + uuidLengthWithHyphens,
+		"      uuidRegexFragments = " + uuidRegexFragments,
+		"    uuidRegexWithHyphens = " + uuidRegexWithHyphens,
+		" uuidRegexWithoutHyphens = " + uuidRegexWithoutHyphens,
+		"  uuidReconstructPattern = " + uuidReconstructPattern,
+		"    unixtimeStringLength = " + unixtimeStringLength,
+		"   maxTokensStringLength = " + maxTokensStringLength,
+		"         shareCodeLength = " + shareCodeLength,
+		"               saltRegex = " + saltRegex,
+		"               codeRegex = " + codeRegex,
+		"           unixtimeRegex = " + unixtimeRegex,
+		"          maxTokensRegex = " + maxTokensRegex
 
-	].join("\n")
-	);
+		].join("\n")
+		);
+}
 
 function dictionaryIndexesToString(dictionaryIndexes) {
 	return dictionaryIndexes.map(dictionaryIndexToChar).join('');
