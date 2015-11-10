@@ -228,6 +228,13 @@ function decrypt(code, article, salt) {
 	var time   = userTimeTokens.slice(uuidLengthWithoutHyphens, uuidLengthWithoutHyphens + unixtimeStringLength);
 	var user   = formatAsUUID(userTimeTokens.slice(0,uuidLengthWithoutHyphens));
 
+	// Baaf if we produce invalid values from the decryption.
+	// In this case, the requirements that the unixtime and maxTokens are valid integer strings is acting as a sort of checksum.
+
+	validateStringOrThrow('decrypted unixtime',    time,   unixtimeRegex        );
+	validateStringOrThrow('decrypted maxTokens',   tokens, maxTokensRegex       );
+	validateStringOrThrow('decrytped sharer UUID', user,   uuidRegexWithHyphens );
+
 	return {
 		tokens: tokens,
 		time:   time,
@@ -247,5 +254,6 @@ module.exports = {
 	_dictionaryIndexes: dictionaryIndexes,
 	_addOverArrays: addOverArrays,
 	_subtractOverArrays: subtractOverArrays,
-	_dictionaryIndexesToString: dictionaryIndexesToString
+	_dictionaryIndexesToString: dictionaryIndexesToString,
+	_seededShuffle: seededShuffle
 };
