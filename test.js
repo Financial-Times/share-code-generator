@@ -42,6 +42,14 @@ test('decrypting should throw for invalid values', t => {
 	t.end();
 });
 
+test('decrypting should throw for corrupted sharecode', t => {
+	var shareCode = fn.encrypt(validUserId, validArticleId, validSalt, validTime, validMaxTokens);
+	var shuffledShareCode = fn._seededShuffle( shareCode.split(''), validSalt ).join('');
+
+	t.throws(fn.decrypt.bind(fn, shuffledShareCode, validArticleId, validSalt), Error);
+	t.end();
+});
+
 test('decrypting should return the original User ID (and time and tokens) when given an encrypted string and the original article ID', t => {
 	var code = fn.encrypt(validUserId, validArticleId, validSalt, validTime, validMaxTokens);
 	var decryptedOutput = fn.decrypt(code, validArticleId, validSalt);
@@ -81,18 +89,19 @@ test('should return false if code does not conform to share code pattern', t => 
 	t.end();
 });
 
-test('decrypting with a different articleId should not return the original User ID', t => {
+test('decrypting with a different articleId should throw', t => {
 	var code = fn.encrypt(validUserId, validArticleId, validSalt, validTime, validMaxTokens);
-	t.not(fn.decrypt(code, validArticleId2, validSalt)['user'], validUserId);
+	t.throws(fn.decrypt.bind(code, validArticleId2, validSalt), Error);
 	t.end();
 });
 
+// now that the articleID is shuffled before being added to the shareCode, this is pretty much irrelevant.
 test('subtracting the articleId from the sharecode and adding a different articleId should not result in a valid code', t => {
 	var code = fn.encrypt(validUserId, validArticleId, validSalt, validTime, validMaxTokens);
 	var indexesMinusArticleId = fn._subtractOverArrays( fn._dictionaryIndexes(code) , fn._dictionaryIndexes( fn._removeHyphens(validArticleId)));
 	var indexesPlusArticleId2 = fn._addOverArrays( indexesMinusArticleId, fn._dictionaryIndexes(fn._removeHyphens(validArticleId2)) );
 	var codeWithArticleId2    = fn._dictionaryIndexesToString( indexesPlusArticleId2 );
 
-	t.not(fn.decrypt(codeWithArticleId2, validArticleId2, validSalt)['user'], validUserId);
+	t.throws(fn.decrypt.bind(codeWithArticleId2, validArticleId2, validSalt), Error);
 	t.end();
 });
