@@ -1,4 +1,4 @@
-## Share Code Generator
+## Share Code Generator [![Circle CI](https://circleci.com/gh/Financial-Times/share-code-generator/tree/master.svg?style=svg)](https://circleci.com/gh/Financial-Times/share-code-generator/tree/master)
 
 This is an NPM module which exposes two functions which are used for generating and helping verify share codes for the FT.
 
