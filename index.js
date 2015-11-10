@@ -235,7 +235,7 @@ function decrypt(code, article, salt) {
 
 	validateStringOrThrow('decrypted unixtime',    time,   unixtimeRegex        );
 	validateStringOrThrow('decrypted maxTokens',   tokens, maxTokensRegex       );
-	validateStringOrThrow('decrytped sharer UUID', user,   uuidRegexWithHyphens );
+	validateStringOrThrow('decrypted sharer UUID', user,   uuidRegexWithHyphens );
 
 	return {
 		tokens: tokens,
