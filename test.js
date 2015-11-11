@@ -12,7 +12,7 @@ const validUserId     = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 const validUserId2    = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaabbb';
 const validArticleId  = 'bbbbbbbb-aaaa-bbbb-aaaa-bbbbbbbbbbbb';
 const validArticleId2 = 'bbbbbbbb-aaaa-bbbb-aaaa-bbbbbbbbbccc';
-const validSalt       = '1234567890123456789012345678901234567890123456';
+const validSalt       = '12345678901234567890123456789012345678901234567';
 const validTime       = 1234567890;
 const validMaxTokens  = 100;
 
