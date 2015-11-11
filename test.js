@@ -16,6 +16,50 @@ const validSalt       = '1234567890123456789012345678901234567890123456';
 const validTime       = 1234567890;
 const validMaxTokens  = 100;
 
+test('integerSequence should generate an integer sequence', t => {
+	var sequence = fn._integerSequence(0+10,5+10);
+
+	for (var i = 0; i < sequence.length; i++) {
+		t.is( sequence[i], i+10);	
+	}
+	t.end();
+});
+
+
+test('seededUnShuffle should unshuffle a shuffled list', t => {
+	var           sequence = fn._integerSequence(0,9);
+	var   shuffledSequence = fn._seededShuffle( sequence, validSalt);
+	var unShuffledSequence = fn._seededUnShuffle( shuffledSequence, validSalt);
+
+	t.is(        sequence.length,   shuffledSequence.length, 'sequence should be same length as shuffledSequence');
+	t.is(shuffledSequence.length, unShuffledSequence.length, 'shuffledSequence should be same length as unShuffledSequence');
+
+	var countShuffleDifferences   = 0;
+	var countUnShuffleDifferences = 0;
+	var countSequenceToUnShuffleDifferences = 0;
+
+	for (var i = 0; i < sequence.length; i++) {
+		if (        sequence[i] !==   shuffledSequence[i]) { countShuffleDifferences++;             }
+		if (shuffledSequence[i] !== unShuffledSequence[i]) { countUnShuffleDifferences++;           }
+		if (        sequence[i] !== unShuffledSequence[i]) { countSequenceToUnShuffleDifferences++;	}
+	}
+
+	if (process.env.NODE_ENV !== 'production') {
+		console.log([
+			'sequences:',
+			'           sequence = ' + sequence.join(', '),
+			'   shuffledSequence = ' + shuffledSequence.join(', '),
+			' unShuffledSequence = ' + unShuffledSequence.join(', '),
+			].join("\n"));
+	}
+
+	t.is(  countShuffleDifferences > 0, true, 'should be >0 differences between sequence and shuffledSequence');
+	t.is(countUnShuffleDifferences > 0, true, 'should be >0 differences between shuffledSequence and unShuffledSequence');
+	t.is(countSequenceToUnShuffleDifferences, 0, 'should be 0 differences between sequence and unShuffledSequence');
+
+	t.end();
+});
+
 test('encrypting should throw for invalid values', t => {
 	t.throws(fn.encrypt.bind(fn,invalidUserId,   validArticleId,   validSalt,   validTime,   validMaxTokens), Error);
 	t.throws(fn.encrypt.bind(fn,  validUserId, invalidArticleId,   validSalt,   validTime,   validMaxTokens), Error);
@@ -47,6 +91,15 @@ test('decrypting should throw for corrupted sharecode', t => {
 	var shuffledShareCode = fn._seededShuffle( shareCode.split(''), validSalt ).join('');
 
 	t.throws(fn.decrypt.bind(fn, shuffledShareCode, validArticleId, validSalt), Error);
+	t.end();
+});
+
+test('decrypting should throw for incremented max tokens char', t => {
+	var shareCode = fn.encrypt(validUserId, validArticleId, validSalt, validTime, validMaxTokens);
+	var indexes = fn._dictionaryIndexes( shareCode );
+	indexes[indexes.length - 1] = fn._mod( indexes[indexes.length - 1] + 1, fn._numPossibleChars);
+	var twiddledShareCode = fn._dictionaryIndexesToString( indexes );
+	t.throws(fn.decrypt.bind(fn, twiddledShareCode, validArticleId, validSalt), Error);
 	t.end();
 });
 

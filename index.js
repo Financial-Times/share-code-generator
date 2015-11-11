@@ -177,6 +177,35 @@ function seededShuffle( array, salt ) {
 	return shuffledArray;
 }
 
+function integerSequence( from, to ) {
+	var list = [];
+	var step = Math.sign( to - from );
+
+	for (var i = from; i <= to; i += step) {
+		list.push(i);
+	}
+
+	return list;
+}
+
+function seededUnShuffle( array, salt ) {
+	var         sequence = integerSequence(0, array.length - 1);
+	var shuffledSequence = seededShuffle( sequence, salt );
+	var shuffledIndicies = [];
+
+	for (var i = 0; i < shuffledSequence.length; i++) {
+		shuffledIndicies[shuffledSequence[i]] = i;
+	}
+
+	var  unShuffledArray = [];
+
+	for (var i = 0; i < shuffledSequence.length; i++) {
+		unShuffledArray[i] = array[shuffledIndicies[i]];
+	}
+
+	return unShuffledArray;
+}
+
 //------------------------------------------
 // exported functions
 
@@ -257,5 +286,10 @@ module.exports = {
 	_addOverArrays: addOverArrays,
 	_subtractOverArrays: subtractOverArrays,
 	_dictionaryIndexesToString: dictionaryIndexesToString,
-	_seededShuffle: seededShuffle
+	_seededShuffle: seededShuffle,
+	_seededUnShuffle: seededUnShuffle,
+	_integerSequence: integerSequence,
+	_mod: mod,
+
+	_numPossibleChars: numPossibleChars
 };
