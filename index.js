@@ -245,12 +245,14 @@ function encrypt(userId, articleId, salt, time, tokens) {
 	var checksumIndex 					 = calcChecksumAsIndex(calcIndiciesChecksum(userTimeTokensDictionaryIndexes), numPossibleChars);
 	userTimeTokensDictionaryIndexes.push( checksumIndex );
 
+	var shuffledUserTimeTokensDictionaryIndexes = seededShuffle(userTimeTokensDictionaryIndexes, salt + 'userTimeTokensDictionaryIndexes');
+
 	var articleDictionaryIndexes         = dictionaryIndexes(article);
-	var shuffledArticleDictionaryIndexes = seededShuffle(articleDictionaryIndexes, salt);
+	var shuffledArticleDictionaryIndexes = seededShuffle(articleDictionaryIndexes, salt + 'articleDictionaryIndexes');
 	var saltDictionaryIndexes            = dictionaryIndexes(salt);
 
 	// ensure salt is always 2nd arg to addOverArrays
-	var tokenIndexes = addOverArrays(addOverArrays(userTimeTokensDictionaryIndexes, shuffledArticleDictionaryIndexes), saltDictionaryIndexes)
+	var tokenIndexes = addOverArrays(addOverArrays(shuffledUserTimeTokensDictionaryIndexes, shuffledArticleDictionaryIndexes), saltDictionaryIndexes)
 	.map(a => mod(a, numPossibleChars));
 
 	var code = dictionaryIndexesToString(tokenIndexes);
@@ -266,12 +268,13 @@ function decrypt(code, article, salt) {
 
 	var codeDictionaryIndexes            = dictionaryIndexes(code);
 	var articleDictionaryIndexes         = dictionaryIndexes(removeHyphens(article));
-	var shuffledArticleDictionaryIndexes = seededShuffle(articleDictionaryIndexes, salt);
+	var shuffledArticleDictionaryIndexes = seededShuffle(articleDictionaryIndexes, salt + 'articleDictionaryIndexes');
 	var saltDictionaryIndexes            = dictionaryIndexes(salt);
 
 	// ensure salt is always 2nd arg to addOverArrays
-	var userTimeTokensDictionaryIndexes = subtractOverArrays(subtractOverArrays(codeDictionaryIndexes, shuffledArticleDictionaryIndexes), saltDictionaryIndexes)
+	var shuffledUserTimeTokensDictionaryIndexes = subtractOverArrays(subtractOverArrays(codeDictionaryIndexes, shuffledArticleDictionaryIndexes), saltDictionaryIndexes)
 	.map(a => mod(a, numPossibleChars));
+	var userTimeTokensDictionaryIndexes = seededUnShuffle( shuffledUserTimeTokensDictionaryIndexes, salt + 'userTimeTokensDictionaryIndexes');
 
 	var suppliedChecksumIndex   = userTimeTokensDictionaryIndexes.pop();
 	var calculatedChecksumIndex = calcChecksumAsIndex(calcIndiciesChecksum( userTimeTokensDictionaryIndexes ), numPossibleChars);
