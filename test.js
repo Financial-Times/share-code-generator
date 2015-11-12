@@ -17,14 +17,22 @@ const validTime       = 1234567890;
 const validMaxTokens  = 100;
 
 test('integerSequence should generate an integer sequence', t => {
-	var sequence = fn._integerSequence(0+10,5+10);
+	var x = 3;
+	var d = 4;
 
+	t.is(fn._integerSequence(x,x).length, 1, "integerSequence(x,x).length should be 1");
+	t.is(fn._integerSequence(x,x)[0],     x, "integerSequence(x,x)[0] should be x"    );
+
+	t.is(fn._integerSequence(x,x + d).length, d + 1, "integerSequence(x,x+d).length should be d+1");
+	t.is(fn._integerSequence(x + d,x).length, d + 1, "integerSequence(x+d,x).length shoudl be d+1");
+
+	var sequence = fn._integerSequence(x, x + d);
 	for (var i = 0; i < sequence.length; i++) {
-		t.is( sequence[i], i+10);	
+		t.is( sequence[i], i+x, "integerSequence(x, x + d)[" + i + "] should be " + (i + x));
 	}
+
 	t.end();
 });
-
 
 test('seededUnShuffle should unshuffle a shuffled list', t => {
 	var           sequence = fn._integerSequence(0,9);
@@ -107,28 +115,28 @@ test('decrypting should return the original User ID (and time and tokens) when g
 	var code = fn.encrypt(validUserId, validArticleId, validSalt, validTime, validMaxTokens);
 	var decryptedOutput = fn.decrypt(code, validArticleId, validSalt);
 
-	t.is(         decryptedOutput['user'  ] , validUserId   );
-	t.is(parseInt(decryptedOutput['time'  ]), validTime     );
-	t.is(parseInt(decryptedOutput['tokens']), validMaxTokens);
-	t.end()
+	t.is(         decryptedOutput['user'  ]     , validUserId   );
+	t.is(parseInt(decryptedOutput['time'  ], 10), validTime     );
+	t.is(parseInt(decryptedOutput['tokens'], 10), validMaxTokens);
+	t.end();
 });
 
 test('decrypting should return the tokens when given an encrypted string', t => {
-	var code = fn.encrypt(validUserId, validArticleId, validSalt, validTime, validMaxTokens);
-	t.is(parseInt(fn.decrypt(code, validArticleId, validSalt)['tokens']), validMaxTokens);
-	t.end()
+	var code = fn.encrypt(validUserId, validArticleId, validSalt, validTime,  validMaxTokens);
+	t.is(parseInt(fn.decrypt(code, validArticleId, validSalt)['tokens'], 10), validMaxTokens);
+	t.end();
 });
 
 test('decrypting should return the tokens==-1 when given an encrypted string with tokens==-123', t => {
 	var code = fn.encrypt(validUserId, validArticleId, validSalt, validTime, -123);
-	t.is(parseInt(fn.decrypt(code, validArticleId, validSalt)['tokens']), -1);
-	t.end()
+	t.is(parseInt(fn.decrypt(code, validArticleId, validSalt)['tokens'], 10), -1);
+	t.end();
 });
 
 test('decrypting should return the time when given an encrypted string', t => {
 	var code = fn.encrypt(validUserId, validArticleId, validSalt, validTime, validMaxTokens);
-	t.is(parseInt(fn.decrypt(code, validArticleId, validSalt)['time']), validTime);
-	t.end()
+	t.is(parseInt(fn.decrypt(code, validArticleId, validSalt)['time'], 10), validTime);
+	t.end();
 });
 
 test('should return true if code conforms to share code pattern', t => {
