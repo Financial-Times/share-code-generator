@@ -188,7 +188,7 @@ function integerSequence( from, to ) {
 	var list = [];
 	var step = Math.sign( to - from );
 	if (step === 0){
-			step = 1;
+		step = 1;
 	} else if (step === -1) {
 		var temp = from;
 		from = to;
