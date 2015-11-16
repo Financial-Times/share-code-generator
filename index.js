@@ -22,7 +22,8 @@ var uuidReconstructPattern   = uuidRegexFragmentLengths.map(function(n,i){return
 
 var unixtimeStringLength  = 10;
 var maxTokensStringLength =  4;
-var shareCodeLength       = uuidLengthWithoutHyphens + unixtimeStringLength + maxTokensStringLength;
+var checksumStringLength  =  1;
+var shareCodeLength       = uuidLengthWithoutHyphens + unixtimeStringLength + maxTokensStringLength + checksumStringLength;
 
 var codeRegexChar   = '[' + dictionaryAsArray.join('') + ']';
 var saltRegexString = '^' + codeRegexChar + '{' + shareCodeLength + '}';
@@ -132,6 +133,12 @@ function validateStringOrThrow(name, value, regexp){
 	}
 }
 
+function validateEqualityOrThrow(v1, v2, message){
+	if (v1 !== v2) {
+		throw new Error('Failed equality check: ' + v1 + ' !== ' + v2 + ': ' + message);
+	}
+}
+
 // any -ve num is coerced to -1
 
 function constructMaxTokensString( num, maxLength ) {
@@ -177,6 +184,52 @@ function seededShuffle( array, salt ) {
 	return shuffledArray;
 }
 
+function integerSequence( from, to ) {
+	var list = [];
+	var step = Math.sign( to - from );
+	if (step === 0){
+		step = 1;
+	} else if (step === -1) {
+		var temp = from;
+		from = to;
+		to = temp;
+	}
+
+	for (var i = from; i <= to; i += 1) {
+		list.push(i);
+	}
+
+	return (step === 1)? list : list.reverse();
+}
+
+function seededUnShuffle( array, salt ) {
+	var         sequence = integerSequence(0, array.length - 1);
+	var shuffledSequence = seededShuffle( sequence, salt );
+	var shuffledIndicies = [];
+
+	var i;
+
+	for (i = 0; i < shuffledSequence.length; i++) {
+		shuffledIndicies[shuffledSequence[i]] = i;
+	}
+
+	var  unShuffledArray = [];
+
+	for (i = 0; i < shuffledSequence.length; i++) {
+		unShuffledArray[i] = array[shuffledIndicies[i]];
+	}
+
+	return unShuffledArray;
+}
+
+function calcIndiciesChecksum( indicies ){
+	return indicies.reduce(function(prev,current){ return prev+current; }, 0);
+}
+
+function calcChecksumAsIndex( checksum, modulus ){
+	return mod(checksum, modulus);
+}
+
 //------------------------------------------
 // exported functions
 
@@ -196,12 +249,17 @@ function encrypt(userId, articleId, salt, time, tokens) {
 	var userTimeTokens = user + timeString + tokensString;
 
 	var userTimeTokensDictionaryIndexes  = dictionaryIndexes(userTimeTokens);
+	var checksumIndex 					 = calcChecksumAsIndex(calcIndiciesChecksum(userTimeTokensDictionaryIndexes), numPossibleChars);
+	userTimeTokensDictionaryIndexes.push( checksumIndex );
+
+	var shuffledUserTimeTokensDictionaryIndexes = seededShuffle(userTimeTokensDictionaryIndexes, salt + 'userTimeTokensDictionaryIndexes');
+
 	var articleDictionaryIndexes         = dictionaryIndexes(article);
-	var shuffledArticleDictionaryIndexes = seededShuffle(articleDictionaryIndexes, salt);
+	var shuffledArticleDictionaryIndexes = seededShuffle(articleDictionaryIndexes, salt + 'articleDictionaryIndexes');
 	var saltDictionaryIndexes            = dictionaryIndexes(salt);
 
 	// ensure salt is always 2nd arg to addOverArrays
-	var tokenIndexes = addOverArrays(addOverArrays(userTimeTokensDictionaryIndexes, shuffledArticleDictionaryIndexes), saltDictionaryIndexes)
+	var tokenIndexes = addOverArrays(addOverArrays(shuffledUserTimeTokensDictionaryIndexes, shuffledArticleDictionaryIndexes), saltDictionaryIndexes)
 	.map(a => mod(a, numPossibleChars));
 
 	var code = dictionaryIndexesToString(tokenIndexes);
@@ -217,12 +275,17 @@ function decrypt(code, article, salt) {
 
 	var codeDictionaryIndexes            = dictionaryIndexes(code);
 	var articleDictionaryIndexes         = dictionaryIndexes(removeHyphens(article));
-	var shuffledArticleDictionaryIndexes = seededShuffle(articleDictionaryIndexes, salt);
+	var shuffledArticleDictionaryIndexes = seededShuffle(articleDictionaryIndexes, salt + 'articleDictionaryIndexes');
 	var saltDictionaryIndexes            = dictionaryIndexes(salt);
 
 	// ensure salt is always 2nd arg to addOverArrays
-	var userTimeTokensDictionaryIndexes = subtractOverArrays(subtractOverArrays(codeDictionaryIndexes, shuffledArticleDictionaryIndexes), saltDictionaryIndexes)
+	var shuffledUserTimeTokensDictionaryIndexes = subtractOverArrays(subtractOverArrays(codeDictionaryIndexes, shuffledArticleDictionaryIndexes), saltDictionaryIndexes)
 	.map(a => mod(a, numPossibleChars));
+	var userTimeTokensDictionaryIndexes = seededUnShuffle( shuffledUserTimeTokensDictionaryIndexes, salt + 'userTimeTokensDictionaryIndexes');
+
+	var suppliedChecksumIndex   = userTimeTokensDictionaryIndexes.pop();
+	var calculatedChecksumIndex = calcChecksumAsIndex(calcIndiciesChecksum( userTimeTokensDictionaryIndexes ), numPossibleChars);
+	validateEqualityOrThrow(suppliedChecksumIndex, calculatedChecksumIndex, 'checksum mismatch');
 
 	var userTimeTokens = dictionaryIndexesToString(userTimeTokensDictionaryIndexes);
 	
@@ -257,5 +320,10 @@ module.exports = {
 	_addOverArrays: addOverArrays,
 	_subtractOverArrays: subtractOverArrays,
 	_dictionaryIndexesToString: dictionaryIndexesToString,
-	_seededShuffle: seededShuffle
+	_seededShuffle: seededShuffle,
+	_seededUnShuffle: seededUnShuffle,
+	_integerSequence: integerSequence,
+	_mod: mod,
+
+	_numPossibleChars: numPossibleChars
 };
