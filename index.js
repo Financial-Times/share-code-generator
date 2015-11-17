@@ -22,16 +22,20 @@ var uuidReconstructPattern   = uuidRegexFragmentLengths.map(function(n,i){return
 
 var unixtimeStringLength  = 10;
 var maxTokensStringLength =  4;
+var contextStringLength   =  1;
 var checksumStringLength  =  1;
-var shareCodeLength       = uuidLengthWithoutHyphens + unixtimeStringLength + maxTokensStringLength + checksumStringLength;
+var shareCodeLength       = uuidLengthWithoutHyphens + unixtimeStringLength + maxTokensStringLength + contextStringLength + checksumStringLength;
+
+var defaultContext = '0';
 
 var codeRegexChar   = '[' + dictionaryAsArray.join('') + ']';
 var saltRegexString = '^' + codeRegexChar + '{' + shareCodeLength + '}';
 var codeRegex       = new RegExp( saltRegexString + '$' );
 var saltRegex       = new RegExp( saltRegexString       ); // salt could be longer - we don't care
-
-var unixtimeRegex  = new RegExp('^[0-9]{' + unixtimeStringLength  + '}$');
-var maxTokensRegex = new RegExp('^(-[0-9]{' + (maxTokensStringLength -1) + '}|[0-9]{' + maxTokensStringLength + '})$');
+var checksumRegex   = new RegExp('^' + codeRegexChar + '$');
+var unixtimeRegex   = new RegExp('^[0-9]{' + unixtimeStringLength  + '}$');
+var maxTokensRegex  = new RegExp('^(-[0-9]{' + (maxTokensStringLength -1) + '}|[0-9]{' + maxTokensStringLength + '})$');
+var contextRegex    = new RegExp('^' + codeRegexChar + '{' + contextStringLength + '}$');
 
 if (process.env.NODE_ENV !== 'production') {
 	console.log("share code config dump:\n" + [
@@ -46,11 +50,14 @@ if (process.env.NODE_ENV !== 'production') {
 		"  uuidReconstructPattern = " + uuidReconstructPattern,
 		"    unixtimeStringLength = " + unixtimeStringLength,
 		"   maxTokensStringLength = " + maxTokensStringLength,
+		"     contextStringLength = " + contextStringLength,
 		"         shareCodeLength = " + shareCodeLength,
+		"          defaultContext = " + defaultContext,
 		"               saltRegex = " + saltRegex,
 		"               codeRegex = " + codeRegex,
 		"           unixtimeRegex = " + unixtimeRegex,
-		"          maxTokensRegex = " + maxTokensRegex
+		"          maxTokensRegex = " + maxTokensRegex,
+		"            contextRegex = " + contextRegex
 
 		].join("\n")
 		);
@@ -233,20 +240,21 @@ function calcChecksumAsIndex( checksum, modulus ){
 //------------------------------------------
 // exported functions
 
-function encrypt(userId, articleId, salt, time, tokens) {
+function encrypt(userId, articleId, salt, time, tokens, context=defaultContext) {
 	var timeString   = '' + time;
 	var tokensString = constructMaxTokensString(tokens, maxTokensStringLength);
 
-	validateStringOrThrow(      'userId',       userId, uuidRegexWithHyphens);
-	validateStringOrThrow(   'articleId',    articleId, uuidRegexWithHyphens);
-	validateStringOrThrow(        'salt',         salt, saltRegex           );
-	validateStringOrThrow(  'timeString',   timeString, unixtimeRegex       );
-	validateStringOrThrow('tokensString', tokensString, maxTokensRegex      );
+	validateStringOrThrow(       'userId',        userId, uuidRegexWithHyphens);
+	validateStringOrThrow(    'articleId',     articleId, uuidRegexWithHyphens);
+	validateStringOrThrow(         'salt',          salt, saltRegex           );
+	validateStringOrThrow(   'timeString',    timeString, unixtimeRegex       );
+	validateStringOrThrow( 'tokensString',  tokensString, maxTokensRegex      );
+	validateStringOrThrow('contextString',       context, contextRegex        );
 
 	var user    = removeHyphens(userId);
 	var article = removeHyphens(articleId);
 
-	var userTimeTokens = user + timeString + tokensString;
+	var userTimeTokens = user + timeString + tokensString + context;
 
 	var userTimeTokensDictionaryIndexes  = dictionaryIndexes(userTimeTokens);
 	var checksumIndex 					 = calcChecksumAsIndex(calcIndiciesChecksum(userTimeTokensDictionaryIndexes), numPossibleChars);
@@ -289,21 +297,25 @@ function decrypt(code, article, salt) {
 
 	var userTimeTokens = dictionaryIndexesToString(userTimeTokensDictionaryIndexes);
 	
-	var tokens = userTimeTokens.slice(uuidLengthWithoutHyphens + unixtimeStringLength);
-	var time   = userTimeTokens.slice(uuidLengthWithoutHyphens, uuidLengthWithoutHyphens + unixtimeStringLength);
-	var user   = formatAsUUID(userTimeTokens.slice(0,uuidLengthWithoutHyphens));
+	var context = userTimeTokens.slice(uuidLengthWithoutHyphens + unixtimeStringLength + maxTokensStringLength);
+
+	var tokens  = userTimeTokens.slice(uuidLengthWithoutHyphens + unixtimeStringLength, uuidLengthWithoutHyphens + unixtimeStringLength + maxTokensStringLength);
+	var time    = userTimeTokens.slice(uuidLengthWithoutHyphens, uuidLengthWithoutHyphens + unixtimeStringLength);
+	var user    = formatAsUUID(userTimeTokens.slice(0,uuidLengthWithoutHyphens));
 
 	// Baaf if we produce invalid values from the decryption.
 	// In this case, the requirements that the unixtime and maxTokens are valid integer strings is acting as a sort of checksum.
 
-	validateStringOrThrow('decrypted unixtime',    time,   unixtimeRegex        );
-	validateStringOrThrow('decrypted maxTokens',   tokens, maxTokensRegex       );
-	validateStringOrThrow('decrypted sharer UUID', user,   uuidRegexWithHyphens );
+	validateStringOrThrow('decrypted unixtime',       time, unixtimeRegex        );
+	validateStringOrThrow('decrypted maxTokens',    tokens, maxTokensRegex       );
+	validateStringOrThrow('decrypted sharer UUID',    user, uuidRegexWithHyphens );
+	validateStringOrThrow('decrypted context',     context, contextRegex         );
 
 	return {
-		tokens: tokens,
-		time:   time,
-		user:   user
+		tokens:  tokens,
+		time:    time,
+		user:    user,
+		context: context
 	};
 }
 
