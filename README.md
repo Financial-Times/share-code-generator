@@ -8,14 +8,14 @@ The encrypt function, encrypt(userId, articleId, salt, time, tokens, context=def
 
 ### Decrypt
 
-The decrypt function, decrypt(code, article, salt), will
+The decrypt function, decrypt(code, article, salt), will return
 ```
-	return {
-		tokens:  tokens,
-		time:    time,
-		user:    user,
-		context: context
-	};
+{
+	tokens:  tokens,
+	time:    time,
+	user:    user,
+	context: context
+};
 ```
 
 The decrypt function does not verify if the User ID actually corresponds with a User account, it if for your application to do those checks.
