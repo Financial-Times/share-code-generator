@@ -7,14 +7,19 @@ const invalidArticleId = '';
 const invalidSalt      = '';
 const invalidTime      = 'abc';
 const invalidMaxTokens = 'abc';
+const invalidContext   = '_';
+const invalidContext2  = 'AA';
+
+const defaultContext   = '0';
 
 const validUserId     = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 const validUserId2    = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaabbb';
 const validArticleId  = 'bbbbbbbb-aaaa-bbbb-aaaa-bbbbbbbbbbbb';
 const validArticleId2 = 'bbbbbbbb-aaaa-bbbb-aaaa-bbbbbbbbbccc';
-const validSalt       = '12345678901234567890123456789012345678901234567';
+const validSalt       = '123456789012345678901234567890123456789012345678';
 const validTime       = 1234567890;
 const validMaxTokens  = 100;
+const validContext    = 'A';
 
 test('integerSequence should generate an integer sequence', t => {
 	var x = 3;
@@ -74,11 +79,17 @@ test('encrypting should throw for invalid values', t => {
 	t.throws(fn.encrypt.bind(fn,  validUserId,   validArticleId, invalidSalt,   validTime,   validMaxTokens), Error);
 	t.throws(fn.encrypt.bind(fn,  validUserId,   validArticleId,   validSalt, invalidTime,   validMaxTokens), Error);
 	t.throws(fn.encrypt.bind(fn,  validUserId,   validArticleId,   validSalt,   validTime, invalidMaxTokens), Error);
+	t.throws(fn.encrypt.bind(fn,  validUserId,   validArticleId,   validSalt,   validTime,   validMaxTokens, invalidContext ), Error);
+	t.throws(fn.encrypt.bind(fn,  validUserId,   validArticleId,   validSalt,   validTime,   validMaxTokens, invalidContext2), Error);
 	t.end();
 });
 
 test('encrypting should return a string', t => {
+	var context;
+
 	t.is(typeof fn.encrypt(validUserId, validArticleId, validSalt, validTime, validMaxTokens), 'string');
+	t.is(typeof fn.encrypt(validUserId, validArticleId, validSalt, validTime, validMaxTokens, context=validContext), 'string');
+
 	t.end();
 });
 
@@ -115,9 +126,25 @@ test('decrypting should return the original User ID (and time and tokens) when g
 	var code = fn.encrypt(validUserId, validArticleId, validSalt, validTime, validMaxTokens);
 	var decryptedOutput = fn.decrypt(code, validArticleId, validSalt);
 
-	t.is(         decryptedOutput['user'  ]     , validUserId   );
-	t.is(parseInt(decryptedOutput['time'  ], 10), validTime     );
-	t.is(parseInt(decryptedOutput['tokens'], 10), validMaxTokens);
+	t.is(         decryptedOutput['user'   ]     , validUserId   );
+	t.is(parseInt(decryptedOutput['time'   ], 10), validTime     );
+	t.is(parseInt(decryptedOutput['tokens' ], 10), validMaxTokens);
+
+	t.is(         decryptedOutput['context'],      defaultContext, 'context(' + decryptedOutput['context'] + ') should be ' + defaultContext);
+	t.end();
+});
+
+test('decrypting should return the original context when given an encrypted string and the original article ID', t => {
+
+	var contexts = ['0', '1', '2', 'a', 'A'];
+
+	contexts.map(function(context){
+		var code = fn.encrypt(validUserId, validArticleId, validSalt, validTime, validMaxTokens, context);
+		var decryptedOutput = fn.decrypt(code, validArticleId, validSalt);
+
+		t.is( decryptedOutput['context'], context, 'context(' + decryptedOutput['context'] + ') should be ' + context);
+	});
+
 	t.end();
 });
 
