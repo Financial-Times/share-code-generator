@@ -240,7 +240,8 @@ function calcChecksumAsIndex( checksum, modulus ){
 //------------------------------------------
 // exported functions
 
-function encrypt(userId, articleId, salt, time, tokens, context=defaultContext) {
+function encrypt(userId, articleId, salt, time, tokens, context) {
+	context = context || defaultContext;
 	var timeString   = '' + time;
 	var tokensString = constructMaxTokensString(tokens, maxTokensStringLength);
 
