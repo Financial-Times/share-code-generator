@@ -124,6 +124,7 @@ test('decrypting should throw for corrupted sharecode', t => {
 	t.end();
 });
 
+
 test('decrypting should return the original User ID (and time and tokens) when given an encrypted string and the original article ID', t => {
 	var code = fn.encrypt(validUserId, validArticleId, validTime, validMaxTokens, validContext, validPem);
 	var decryptedOutput = fn.decrypt(code, validArticleId, validPem);
