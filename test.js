@@ -124,15 +124,6 @@ test('decrypting should throw for corrupted sharecode', t => {
 	t.end();
 });
 
-test('decrypting should throw for incremented max tokens char', t => {
-	var shareCode = fn.encrypt(validUserId, validArticleId, validTime, validMaxTokens, validContext, validPem);
-	var indexes = fn._dictionaryIndexes( shareCode );
-	indexes[indexes.length - 1] = fn._mod( indexes[indexes.length - 1] + 1, fn._numPossibleChars);
-	var twiddledShareCode = fn._dictionaryIndexesToString( indexes );
-	t.throws(fn.decrypt.bind(fn, twiddledShareCode, validArticleId, validContext, validPem), Error);
-	t.end();
-});
-
 test('decrypting should return the original User ID (and time and tokens) when given an encrypted string and the original article ID', t => {
 	var code = fn.encrypt(validUserId, validArticleId, validTime, validMaxTokens, validContext, validPem);
 	var decryptedOutput = fn.decrypt(code, validArticleId, validPem);

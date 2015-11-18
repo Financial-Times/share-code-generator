@@ -320,15 +320,7 @@ module.exports = {
 	encrypt: encrypt,
 	decrypt: decrypt,
 	isShareCodePattern: isShareCodePattern,
-	_removeHyphens: removeHyphens,
-	_dictionaryIndexes: dictionaryIndexes,
-	_addOverArrays: addOverArrays,
-	_subtractOverArrays: subtractOverArrays,
-	_dictionaryIndexesToString: dictionaryIndexesToString,
 	_seededShuffle: seededShuffle,
 	_seededUnShuffle: seededUnShuffle,
-	_integerSequence: integerSequence,
-	_mod: mod,
-
-	_numPossibleChars: numPossibleChars
+	_integerSequence: integerSequence
 };
