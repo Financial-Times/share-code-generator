@@ -180,7 +180,7 @@ function zeroPadNumToN(num, n) {
 
 // For shuffling arrays:
 // - construct a seed from the salt (just use the salt string)
-// - created a seeded prng (via knuth-shuffle-seeded, added to package.json, 
+// - created a seeded prng (via knuth-shuffle-seeded, added to package.json,
 // -- https://www.npmjs.com/package/knuth-shuffle-seeded)
 // -- https://github.com/TimothyGu/knuth-shuffle-seeded
 // - construct reversible shuffle of article id
@@ -240,7 +240,8 @@ function calcChecksumAsIndex( checksum, modulus ){
 //------------------------------------------
 // exported functions
 
-function encrypt(userId, articleId, salt, time, tokens, context=defaultContext) {
+function encrypt(userId, articleId, salt, time, tokens, context) {
+	context = context || defaultContext;
 	var timeString   = '' + time;
 	var tokensString = constructMaxTokensString(tokens, maxTokensStringLength);
 
@@ -296,7 +297,7 @@ function decrypt(code, article, salt) {
 	validateEqualityOrThrow(suppliedChecksumIndex, calculatedChecksumIndex, 'checksum mismatch');
 
 	var userTimeTokens = dictionaryIndexesToString(userTimeTokensDictionaryIndexes);
-	
+
 	var context = userTimeTokens.slice(uuidLengthWithoutHyphens + unixtimeStringLength + maxTokensStringLength);
 
 	var tokens  = userTimeTokens.slice(uuidLengthWithoutHyphens + unixtimeStringLength, uuidLengthWithoutHyphens + unixtimeStringLength + maxTokensStringLength);
