@@ -13,7 +13,7 @@
   "author": "Jake Champion",
   "license": "",
   "devDependencies": {
-    "ava": "^0.2.0"
+    "ava": "^0.5.0"
   },
   "dependencies": {
     "knuth-shuffle-seeded": "^1.0.6"
