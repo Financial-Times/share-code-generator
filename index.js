@@ -37,10 +37,8 @@ var shareCodeLength       = shareDetailsLength + checksumStringLength;
 var defaultContext = '0';
 
 var codeRegexChar   = '[' + dictionaryAsArray.join('') + ']';
-// var saltRegexString = '^' + codeRegexChar + '{' + shareCodeLength + '}';
 var codeRegex       = new RegExp( '^' + codeRegexChar + '{' + shareCodeLength + '}$' );
 var detailsRegex    = new RegExp( '^' + codeRegexChar + '{' + shareDetailsLength + '}' + '$' );
-// var saltRegex       = new RegExp( saltRegexString       ); // salt could be longer - we don't care
 var checksumRegex   = new RegExp('^' + codeRegexChar + '$');
 var unixtimeRegex   = new RegExp('^[0-9]{' + unixtimeStringLength  + '}$');
 var maxTokensRegex  = new RegExp('^(-[0-9]{' + (maxTokensStringLength -1) + '}|[0-9]{' + maxTokensStringLength + '})$');
@@ -186,16 +184,9 @@ function zeroPadNumToN(num, n) {
 	return zeroPadded;
 }
 
-// For shuffling arrays:
-// - construct a seed from the salt (just use the salt string)
-// - created a seeded prng (via knuth-shuffle-seeded, added to package.json, 
-// -- https://www.npmjs.com/package/knuth-shuffle-seeded)
-// -- https://github.com/TimothyGu/knuth-shuffle-seeded
-// - construct reversible shuffle of article id
-
-function seededShuffle( array, salt ) {
+function seededShuffle( array, seed ) {
 	var clonedArray   = array.slice(0);
-	var shuffledArray = shuffle(clonedArray, salt);
+	var shuffledArray = shuffle(clonedArray, seed);
 	return shuffledArray;
 }
 
@@ -217,9 +208,9 @@ function integerSequence( from, to ) {
 	return (step === 1)? list : list.reverse();
 }
 
-function seededUnShuffle( array, salt ) {
+function seededUnShuffle( array, seed ) {
 	var         sequence = integerSequence(0, array.length - 1);
-	var shuffledSequence = seededShuffle( sequence, salt );
+	var shuffledSequence = seededShuffle( sequence, seed );
 	var shuffledIndicies = [];
 
 	var i;
@@ -256,7 +247,7 @@ function calcSig(text, pem){
 //------------------------------------------
 // exported functions
 
-function encrypt(userId, articleId, salt, time, tokens, context, pem) {
+function encrypt(userId, articleId, time, tokens, context, pem) {
 	var timeString   = '' + time;
 	var tokensString = constructMaxTokensString(tokens, maxTokensStringLength);
 	context = context || defaultContext;
@@ -264,7 +255,6 @@ function encrypt(userId, articleId, salt, time, tokens, context, pem) {
 
 	validateStringOrThrow(       'userId',        userId, uuidRegexWithHyphens);
 	validateStringOrThrow(    'articleId',     articleId, uuidRegexWithHyphens);
-	// validateStringOrThrow(         'salt',          salt, saltRegex           );
 	validateStringOrThrow(   'timeString',    timeString, unixtimeRegex       );
 	validateStringOrThrow( 'tokensString',  tokensString, maxTokensRegex      );
 	validateStringOrThrow('contextString',       context, contextRegex        );
@@ -283,33 +273,15 @@ function encrypt(userId, articleId, salt, time, tokens, context, pem) {
 	var shareCode                = shareCodeArray.join('');
 	validateStringOrThrow( 'shareCode', shareCode, codeRegex );
 
-	// var userTimeTokens = user + timeString + tokensString + context;
-	// var userTimeTokensDictionaryIndexes  = dictionaryIndexes(userTimeTokens);
-	// var checksumIndex 					 = calcChecksumAsIndex(calcIndiciesChecksum(userTimeTokensDictionaryIndexes), numPossibleChars);
-	// userTimeTokensDictionaryIndexes.push( checksumIndex );
-
-	// var shuffledUserTimeTokensDictionaryIndexes = seededShuffle(userTimeTokensDictionaryIndexes, salt + 'userTimeTokensDictionaryIndexes');
-
-	// var articleDictionaryIndexes         = dictionaryIndexes(article);
-	// var shuffledArticleDictionaryIndexes = seededShuffle(articleDictionaryIndexes, salt + 'articleDictionaryIndexes');
-	// var saltDictionaryIndexes            = dictionaryIndexes(salt);
-
-	// // ensure salt is always 2nd arg to addOverArrays
-	// var tokenIndexes = addOverArrays(addOverArrays(shuffledUserTimeTokensDictionaryIndexes, shuffledArticleDictionaryIndexes), saltDictionaryIndexes)
-	// .map(a => mod(a, numPossibleChars));
-
-	// var code = dictionaryIndexesToString(tokenIndexes);
-
 	return shareCode;
 }
 
-function decrypt(code, article, salt, pem) {
+function decrypt(code, article, pem) {
 
 	pem = pem || "";
 
 	validateStringOrThrow(     'code',    code, codeRegex           );
 	validateStringOrThrow('articleId', article, uuidRegexWithHyphens);
-	// validateStringOrThrow(     'salt',    salt, saltRegex           );
 	validateStringOrThrow(      'pem',     pem, pemRegex            );
 
 	var codeArray           = code.split('');
@@ -318,27 +290,6 @@ function decrypt(code, article, salt, pem) {
 	var shareDetails        = codeUnshuffled.slice(0,shareDetailsLength);
 	var sig                 = codeUnshuffled.slice(shareDetailsLength);
 	validateStringOrThrow( 'sig', sig, sigRegex );
-
-	// var codeDictionaryIndexes            = dictionaryIndexes(code);
-	// var articleDictionaryIndexes         = dictionaryIndexes(removeHyphens(article));
-	// var shuffledArticleDictionaryIndexes = seededShuffle(articleDictionaryIndexes, salt + 'articleDictionaryIndexes');
-	// var saltDictionaryIndexes            = dictionaryIndexes(salt);
-
-	// // ensure salt is always 2nd arg to addOverArrays
-	// var shuffledUserTimeTokensDictionaryIndexes = subtractOverArrays(subtractOverArrays(codeDictionaryIndexes, shuffledArticleDictionaryIndexes), saltDictionaryIndexes)
-	// .map(a => mod(a, numPossibleChars));
-	// var userTimeTokensDictionaryIndexes = seededUnShuffle( shuffledUserTimeTokensDictionaryIndexes, salt + 'userTimeTokensDictionaryIndexes');
-
-	// var suppliedChecksumIndex   = userTimeTokensDictionaryIndexes.pop();
-	// var calculatedChecksumIndex = calcChecksumAsIndex(calcIndiciesChecksum( userTimeTokensDictionaryIndexes ), numPossibleChars);
-	// validateEqualityOrThrow(suppliedChecksumIndex, calculatedChecksumIndex, 'checksum mismatch');
-
-	// var userTimeTokens = dictionaryIndexesToString(userTimeTokensDictionaryIndexes);
-	
-	// var context = userTimeTokens.slice(uuidLengthWithoutHyphens + unixtimeStringLength + maxTokensStringLength);
-	// var tokens  = userTimeTokens.slice(uuidLengthWithoutHyphens + unixtimeStringLength, uuidLengthWithoutHyphens + unixtimeStringLength + maxTokensStringLength);
-	// var time    = userTimeTokens.slice(uuidLengthWithoutHyphens, uuidLengthWithoutHyphens + unixtimeStringLength);
-	// var user    = formatAsUUID(userTimeTokens.slice(0,uuidLengthWithoutHyphens));
 
 	var context = shareDetails.slice(uuidLengthWithoutHyphens + unixtimeStringLength + maxTokensStringLength);
 	var tokens  = shareDetails.slice(uuidLengthWithoutHyphens + unixtimeStringLength, uuidLengthWithoutHyphens + unixtimeStringLength + maxTokensStringLength);

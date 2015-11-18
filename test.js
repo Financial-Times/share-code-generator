@@ -86,57 +86,56 @@ test('seededUnShuffle should unshuffle a shuffled list', t => {
 });
 
 test('encrypting should throw for invalid values', t => {
-	t.throws(fn.encrypt.bind(fn,invalidUserId,   validArticleId,   validSalt,   validTime,   validMaxTokens,    validContext,   validPem), Error);
-	t.throws(fn.encrypt.bind(fn,  validUserId, invalidArticleId,   validSalt,   validTime,   validMaxTokens,    validContext,   validPem), Error);
-	// t.throws(fn.encrypt.bind(fn,  validUserId,   validArticleId, invalidSalt,   validTime,   validMaxTokens,    validContext,   validPem), Error);
-	t.throws(fn.encrypt.bind(fn,  validUserId,   validArticleId,   validSalt, invalidTime,   validMaxTokens,    validContext,   validPem), Error);
-	t.throws(fn.encrypt.bind(fn,  validUserId,   validArticleId,   validSalt,   validTime, invalidMaxTokens,    validContext,   validPem), Error);
-	t.throws(fn.encrypt.bind(fn,  validUserId,   validArticleId,   validSalt,   validTime,   validMaxTokens,  invalidContext,   validPem), Error);
-	t.throws(fn.encrypt.bind(fn,  validUserId,   validArticleId,   validSalt,   validTime,   validMaxTokens, invalidContext2,   validPem), Error);
-	t.throws(fn.encrypt.bind(fn,  validUserId,   validArticleId,   validSalt,   validTime,   validMaxTokens,    validContext, invalidPem), Error);
+	t.throws(fn.encrypt.bind(fn,invalidUserId,   validArticleId,   validTime,   validMaxTokens,    validContext,   validPem), Error);
+	t.throws(fn.encrypt.bind(fn,  validUserId, invalidArticleId,   validTime,   validMaxTokens,    validContext,   validPem), Error);
+	t.throws(fn.encrypt.bind(fn,  validUserId,   validArticleId, invalidTime,   validMaxTokens,    validContext,   validPem), Error);
+	t.throws(fn.encrypt.bind(fn,  validUserId,   validArticleId,   validTime, invalidMaxTokens,    validContext,   validPem), Error);
+	t.throws(fn.encrypt.bind(fn,  validUserId,   validArticleId,   validTime,   validMaxTokens,  invalidContext,   validPem), Error);
+	t.throws(fn.encrypt.bind(fn,  validUserId,   validArticleId,   validTime,   validMaxTokens, invalidContext2,   validPem), Error);
+	t.throws(fn.encrypt.bind(fn,  validUserId,   validArticleId,   validTime,   validMaxTokens,    validContext, invalidPem), Error);
 	t.end();
 });
 
 test('encrypting should return a string', t => {
 	var context;
 
-	t.is(typeof fn.encrypt(validUserId, validArticleId, validSalt, validTime, validMaxTokens, validContext, validPem), 'string');
+	t.is(typeof fn.encrypt(validUserId, validArticleId, validTime, validMaxTokens, validContext, validPem), 'string');
 
 	t.end();
 });
 
 test('encrypting should accept a negative maxTokens', t => {
-	t.is(typeof fn.encrypt(validUserId, validArticleId, validSalt, validTime, -1, validContext, validPem), 'string');
+	t.is(typeof fn.encrypt(validUserId, validArticleId, validTime, -1, validContext, validPem), 'string');
 	t.end();
 });
 
 test('decrypting should throw for invalid values', t => {
-	t.throws(fn.decrypt.bind(fn,invalidUserId, validArticleId, validSalt), Error);
-	t.throws(fn.decrypt.bind(fn,validUserId, invalidArticleId, validSalt), Error);
-	t.throws(fn.decrypt.bind(fn,validUserId, validArticleId, invalidSalt), Error);
+	t.throws(fn.decrypt.bind(fn,invalidUserId, validArticleId,   validPem), Error);
+	t.throws(fn.decrypt.bind(fn,validUserId, invalidArticleId,   validPem), Error);
+	t.throws(fn.decrypt.bind(fn,validUserId,   validArticleId, invalidPem), Error);
 	t.end();
 });
 
 test('decrypting should throw for corrupted sharecode', t => {
-	var shareCode = fn.encrypt(validUserId, validArticleId, validSalt, validTime, validMaxTokens, validContext, validPem);
-	var shuffledShareCode = fn._seededShuffle( shareCode.split(''), validSalt ).join('');
+	var shareCode = fn.encrypt(validUserId, validArticleId, validTime, validMaxTokens, validContext, validPem);
+	var shuffledShareCode = fn._seededShuffle( shareCode.split(''), validPem ).join('');
 
-	t.throws(fn.decrypt.bind(fn, shuffledShareCode, validArticleId, validSalt, validContext, validPem), Error);
+	t.throws(fn.decrypt.bind(fn, shuffledShareCode, validArticleId, validContext, validPem), Error);
 	t.end();
 });
 
 test('decrypting should throw for incremented max tokens char', t => {
-	var shareCode = fn.encrypt(validUserId, validArticleId, validSalt, validTime, validMaxTokens, validContext, validPem);
+	var shareCode = fn.encrypt(validUserId, validArticleId, validTime, validMaxTokens, validContext, validPem);
 	var indexes = fn._dictionaryIndexes( shareCode );
 	indexes[indexes.length - 1] = fn._mod( indexes[indexes.length - 1] + 1, fn._numPossibleChars);
 	var twiddledShareCode = fn._dictionaryIndexesToString( indexes );
-	t.throws(fn.decrypt.bind(fn, twiddledShareCode, validArticleId, validSalt, validContext, validPem), Error);
+	t.throws(fn.decrypt.bind(fn, twiddledShareCode, validArticleId, validContext, validPem), Error);
 	t.end();
 });
 
 test('decrypting should return the original User ID (and time and tokens) when given an encrypted string and the original article ID', t => {
-	var code = fn.encrypt(validUserId, validArticleId, validSalt, validTime, validMaxTokens, validContext, validPem);
-	var decryptedOutput = fn.decrypt(code, validArticleId, validSalt, validPem);
+	var code = fn.encrypt(validUserId, validArticleId, validTime, validMaxTokens, validContext, validPem);
+	var decryptedOutput = fn.decrypt(code, validArticleId, validPem);
 
 	t.is(         decryptedOutput['user'   ]     , validUserId   );
 	t.is(parseInt(decryptedOutput['time'   ], 10), validTime     );
@@ -151,8 +150,8 @@ test('decrypting should return the original context when given an encrypted stri
 	var contexts = ['0', '1', '2', 'a', 'A'];
 
 	contexts.map(function(context){
-		var code = fn.encrypt(validUserId, validArticleId, validSalt, validTime, validMaxTokens, context, validPem);
-		var decryptedOutput = fn.decrypt(code, validArticleId, validSalt, validPem);
+		var code = fn.encrypt(validUserId, validArticleId, validTime, validMaxTokens, context, validPem);
+		var decryptedOutput = fn.decrypt(code, validArticleId, validPem);
 
 		t.is( decryptedOutput['context'], context, 'context(' + decryptedOutput['context'] + ') should be ' + context);
 	});
@@ -161,25 +160,25 @@ test('decrypting should return the original context when given an encrypted stri
 });
 
 test('decrypting should return the tokens when given an encrypted string', t => {
-	var code = fn.encrypt(validUserId, validArticleId, validSalt, validTime,  validMaxTokens, validContext, validPem);
-	t.is(parseInt(fn.decrypt(code, validArticleId, validSalt, validPem)['tokens'], 10), validMaxTokens);
+	var code = fn.encrypt(validUserId, validArticleId, validTime,  validMaxTokens, validContext, validPem);
+	t.is(parseInt(fn.decrypt(code, validArticleId, validPem)['tokens'], 10), validMaxTokens);
 	t.end();
 });
 
 test('decrypting should return the tokens==-1 when given an encrypted string with tokens==-123', t => {
-	var code = fn.encrypt(validUserId, validArticleId, validSalt, validTime, -123, validContext, validPem);
-	t.is(parseInt(fn.decrypt(code, validArticleId, validSalt, validPem)['tokens'], 10), -1);
+	var code = fn.encrypt(validUserId, validArticleId, validTime, -123, validContext, validPem);
+	t.is(parseInt(fn.decrypt(code, validArticleId, validPem)['tokens'], 10), -1);
 	t.end();
 });
 
 test('decrypting should return the time when given an encrypted string', t => {
-	var code = fn.encrypt(validUserId, validArticleId, validSalt, validTime, validMaxTokens, validContext, validPem);
-	t.is(parseInt(fn.decrypt(code, validArticleId, validSalt, validPem)['time'], 10), validTime);
+	var code = fn.encrypt(validUserId, validArticleId, validTime, validMaxTokens, validContext, validPem);
+	t.is(parseInt(fn.decrypt(code, validArticleId, validPem)['time'], 10), validTime);
 	t.end();
 });
 
 test('should return true if code conforms to share code pattern', t => {
-	var code = fn.encrypt(validUserId, validArticleId, validSalt, validTime, validMaxTokens, validContext, validPem);
+	var code = fn.encrypt(validUserId, validArticleId, validTime, validMaxTokens, validContext, validPem);
 	t.is(fn.isShareCodePattern(code), true);
 	t.end();
 });
@@ -190,8 +189,8 @@ test('should return false if code does not conform to share code pattern', t => 
 });
 
 test('decrypting with a different articleId should throw', t => {
-	var code = fn.encrypt(validUserId, validArticleId, validSalt, validTime, validMaxTokens, validContext, validPem);
-	t.throws(fn.decrypt.bind(code, validArticleId2, validSalt, validPem), Error);
+	var code = fn.encrypt(validUserId, validArticleId, validTime, validMaxTokens, validContext, validPem);
+	t.throws(fn.decrypt.bind(code, validArticleId2, validPem), Error);
 	t.end();
 });
 
