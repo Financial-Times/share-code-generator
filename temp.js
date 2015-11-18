@@ -1,6 +1,6 @@
 'use strict'
 
-var NodeRSA = require('node-rsa');
+// var NodeRSA = require('node-rsa');
 var crypto = require('crypto');
 
 var pem = '-----BEGIN RSA PRIVATE KEY-----\n'+
@@ -13,39 +13,44 @@ var pem = '-----BEGIN RSA PRIVATE KEY-----\n'+
           'Es+KCn25OKXR/FJ5fu6A6A+MptABL3r8SEjlpLc=\n'+
           '-----END RSA PRIVATE KEY-----';
 
-var key = new NodeRSA(pem);
- 
 var text = 'ABCDEFghijklMNOPQRstuvWxYz12344466475654jlh64jkgh4hkghk54ghk5';
-var signature = key.sign(text, 'base64', 'utf8');
-var checkSig = key.verify(text, signature, 'utf8', 'base64');
 
-console.log([
-	"node-rsa:",
-	"key=" + key,
-	"text=" + text,
-	"signature=" + signature,
-	"checkSig=" + checkSig
-	].join("\n"));
+// var key = new NodeRSA(pem);
+ 
+// var signature = key.sign(text, 'base64', 'utf8');
+// var checkSig = key.verify(text, signature, 'utf8', 'base64');
 
-var hash = crypto.createHash('sha1');
-hash.update( text );
-var digest = hash.digest('hex');
+// console.log([
+// 	"node-rsa:",
+// 	"key=" + key,
+// 	"text=" + text,
+// 	"signature=" + signature,
+// 	"checkSig=" + checkSig
+// 	].join("\n"));
 
-console.log([
-	"",
-	"crypto.createHash:",
-	"text=" + text,
-	"digest=" + digest
-	].join("\n"));
+var sha = 'sha512';
 
-console.log("\nmany hashes:");
+// var hash = crypto.createHash(sha);
+// hash.update( text );
+// var digest = hash.digest('hex');
+
+// console.log([
+// 	"",
+// 	"crypto.createHash:",
+// 	"text=" + text,
+// 	"digest=" + digest
+// 	].join("\n"));
+
+var sigLength = 8;
+
+console.log("\nmany hashes: crypto.createHash: sha=" + sha + ", sigLength=" + sigLength);
 
 for (var i = 0; i < 10; i++) {
-	hash = crypto.createHash('sha1');
+	var hash = crypto.createHash(sha);
 	var texti = text + i;
 	hash.update( texti );
-	digest = hash.digest('hex');
-	var sig = digest.slice(0,8);
+	var digest = hash.digest('hex');
+	var sig = digest.slice(0,sigLength);
 	console.log("texti=" + texti + ", digest=" + digest + ", sig=" + sig);
 }
 
