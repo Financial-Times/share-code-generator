@@ -1,6 +1,6 @@
 {
   "name": "share-code-creator",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "description": "allows encrypt and decrypt of sharecodes",
   "main": "index.js",
   "scripts": {
