@@ -120,7 +120,7 @@ test('decrypting should throw for corrupted sharecode', t => {
 	var shareCode = fn.encrypt(validUserId, validArticleId, validTime, validMaxTokens, validContext, validPem);
 	var shuffledShareCode = fn._seededShuffle( shareCode.split(''), validPem ).join('');
 
-	t.throws(fn.decrypt.bind(fn, shuffledShareCode, validArticleId, validContext, validPem), Error);
+	t.throws(fn.decrypt.bind(fn, shuffledShareCode, validArticleId, validPem), Error);
 	t.end();
 });
 
@@ -186,3 +186,20 @@ test('decrypting with a different articleId should throw', t => {
 	t.end();
 });
 
+test('tweaking any of the chars in the sharecode should throw', t => {
+
+	var shareCode = fn.encrypt(validUserId, validArticleId2, validTime, validMaxTokens, validContext, validPem);
+	console.log( "tweaking any of the chars in the sharecode should throw: shareCode=" + shareCode );
+
+	[-2,-1,1,2].forEach( function(delta){
+		for (var i = 0; i < shareCode.length ; i++) {
+			var codeArray = shareCode.split('');
+			var c = (codeArray[i].charCodeAt() + delta + 256) % 256;
+			codeArray[i] = String.fromCharCode(c);
+			var newCode = codeArray.join('');
+			t.throws(fn.decrypt.bind(fn, newCode, validArticleId2, validPem), Error);
+		}
+	});
+
+	t.end();
+});

@@ -236,11 +236,19 @@ function calcChecksumAsIndex( checksum, modulus ){
 	return mod(checksum, modulus);
 }
 
-function calcSig(text, pem){
+function calcSigOfText(text, pem){
 	var signer = crypto.createSign(sha);
 	signer.update(text);
 	var sign   = signer.sign(pem, sigEncoding);
 	var sig    = sign.slice(0,sigLength);
+	return sig;
+}
+
+function calcSigOfShareDetails(shareDetails, articleId, pem){
+	validateStringOrThrow('shareDetails', shareDetails,         detailsRegex);
+	validateStringOrThrow(   'articleId',    articleId, uuidRegexWithHyphens);
+	var sig = calcSigOfText(shareDetails + articleId, pem);
+	validateStringOrThrow( 'sig', sig, sigRegex );
 	return sig;
 }
 
@@ -263,10 +271,11 @@ function encrypt(userId, articleId, time, tokens, context, pem) {
 	var user    = removeHyphens(userId);
 	var article = removeHyphens(articleId);
 
-	var shareDetails             = user + timeString + tokensString + context;
-	var shareDetailsWithArticle  = shareDetails + article;
-	var sig                      = calcSig( shareDetailsWithArticle, pem);
-	validateStringOrThrow( 'sig', sig, sigRegex );
+	var shareDetails = user + timeString + tokensString + context;
+	validateStringOrThrow( 'shareDetails', shareDetails, detailsRegex );
+
+	var sig = calcSigOfShareDetails( shareDetails, articleId, pem );
+
 	var shareCodeUnshuffled      = shareDetails + sig;
 	var shareCodeUnshuffledArray = shareCodeUnshuffled.split('');
 	var shareCodeArray           = seededShuffle(shareCodeUnshuffledArray, pem);
@@ -276,13 +285,13 @@ function encrypt(userId, articleId, time, tokens, context, pem) {
 	return shareCode;
 }
 
-function decrypt(code, article, pem) {
+function decrypt(code, articleId, pem) {
 
 	pem = pem || "";
 
-	validateStringOrThrow(     'code',    code, codeRegex           );
-	validateStringOrThrow('articleId', article, uuidRegexWithHyphens);
-	validateStringOrThrow(      'pem',     pem, pemRegex            );
+	validateStringOrThrow(     'code',      code, codeRegex           );
+	validateStringOrThrow('articleId', articleId, uuidRegexWithHyphens);
+	validateStringOrThrow(      'pem',       pem, pemRegex            );
 
 	var codeArray           = code.split('');
 	var codeUnshuffledArray = seededUnShuffle( codeArray, pem );
@@ -290,6 +299,12 @@ function decrypt(code, article, pem) {
 	var shareDetails        = codeUnshuffled.slice(0,shareDetailsLength);
 	var sig                 = codeUnshuffled.slice(shareDetailsLength);
 	validateStringOrThrow( 'sig', sig, sigRegex );
+
+	var recalcSig = calcSigOfShareDetails( shareDetails, articleId, pem);
+
+	if ( sig !== recalcSig ) {
+		throw new Error('Corrupt sharecode: sig mismatch');
+	}
 
 	var context = shareDetails.slice(uuidLengthWithoutHyphens + unixtimeStringLength + maxTokensStringLength);
 	var tokens  = shareDetails.slice(uuidLengthWithoutHyphens + unixtimeStringLength, uuidLengthWithoutHyphens + unixtimeStringLength + maxTokensStringLength);
