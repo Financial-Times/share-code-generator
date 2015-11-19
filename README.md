@@ -30,3 +30,20 @@ Check-out the repository and run `npm install` in the directory. If that has wor
 ```
 npm test
 ```
+
+# Notes
+
+## signing
+
+https://www.npmjs.com/package/node-rsa
+
+```
+var NodeRSA = require('node-rsa');
+var key = new NodeRSA({b: 512});
+ 
+var text = 'Hello RSA!';
+var signature = key.sign(text, 'base64', 'utf8');
+
+var checkSig = key.verify(buffer, signature, 'utf8', 'base64');
+
+```
