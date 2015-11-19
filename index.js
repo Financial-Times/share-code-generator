@@ -266,8 +266,6 @@ function calcSigOfShareDetails(shareDetails, articleId, pem){
 function encrypt(userId, articleId, time, tokens, context, pem) {
 	var timeString   = '' + time;
 	var tokensString = constructMaxTokensString(tokens, maxTokensStringLength);
-	context = context || defaultContext;
-	pem     = pem     || "";
 
 	validateStringOrThrow(       'userId',        userId, uuidRegexWithHyphens);
 	validateStringOrThrow(    'articleId',     articleId, uuidRegexWithHyphens);
@@ -292,8 +290,6 @@ function encrypt(userId, articleId, time, tokens, context, pem) {
 }
 
 function decrypt(code, articleId, pem) {
-
-	pem = pem || "";
 
 	validateStringOrThrow(     'code',      code, codeRegex           );
 	validateStringOrThrow('articleId', articleId, uuidRegexWithHyphens);
