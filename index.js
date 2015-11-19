@@ -268,9 +268,7 @@ function encrypt(userId, articleId, time, tokens, context, pem) {
 	validateStringOrThrow('contextString',       context, contextRegex        );
 	validateStringOrThrow(          'pem',           pem, pemRegex            );
 
-	var user    = removeHyphens(userId);
-	var article = removeHyphens(articleId);
-
+	var user         = removeHyphens(userId);
 	var shareDetails = user + timeString + tokensString + context;
 	validateStringOrThrow( 'shareDetails', shareDetails, detailsRegex );
 
@@ -278,7 +276,7 @@ function encrypt(userId, articleId, time, tokens, context, pem) {
 
 	var shareCodeUnshuffled      = shareDetails + sig;
 	var shareCodeUnshuffledArray = shareCodeUnshuffled.split('');
-	var shareCodeArray           = seededShuffle(shareCodeUnshuffledArray, pem);
+	var shareCodeArray           = seededShuffle(shareCodeUnshuffledArray, articleId);
 	var shareCode                = shareCodeArray.join('');
 	validateStringOrThrow( 'shareCode', shareCode, codeRegex );
 
@@ -294,7 +292,7 @@ function decrypt(code, articleId, pem) {
 	validateStringOrThrow(      'pem',       pem, pemRegex            );
 
 	var codeArray           = code.split('');
-	var codeUnshuffledArray = seededUnShuffle( codeArray, pem );
+	var codeUnshuffledArray = seededUnShuffle( codeArray, articleId );
 	var codeUnshuffled      = codeUnshuffledArray.join('');
 	var shareDetails        = codeUnshuffled.slice(0,shareDetailsLength);
 	var sig                 = codeUnshuffled.slice(shareDetailsLength);
