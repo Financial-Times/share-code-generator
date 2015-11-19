@@ -46,6 +46,14 @@ var contextRegex    = new RegExp('^' + codeRegexChar + '{' + contextStringLength
 
 if (process.env.NODE_ENV !== 'production') {
 	console.log("share code config dump:\n" + [
+		"                     sha = " + sha,
+		"             sigEncoding = " + sigEncoding, 
+		"               sigLength = " + sigLength,
+		"                pemRegex = " + pemRegex,
+		"                sigRegex = " + sigRegex,
+		"           checksumRegex = " + checksumRegex,
+		"      shareDetailsLength = " + shareDetailsLength,
+		"            detailsRegex = " + detailsRegex,
 		"           uuidRegexChar = " + uuidRegexChar,
 		"        numPossibleChars = " + numPossibleChars,
 		"uuidRegexFragmentLengths = " + uuidRegexFragmentLengths,
